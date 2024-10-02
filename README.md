@@ -2,9 +2,14 @@
 
 A Python-based web application for managing service subscriptions and one-time orders.
 
+## Context
+
+A family member is starting a laundry business and needs a simple web app to manage orders and subscriptions. She wants users to be able to scan a printed QR code on a laundry basket to check out an order. She would also like to be able to view orders and manage subscriptions from a dashboard. This web app needs to be simple to understand and maintain, and cost effective to self host. (so easy to self host that she can do it herself with little to no technical experience).
+
+Users should be able to 1. scan qr code. 2. login if not already logged in. 3. select a service and check out. 4. receive a confirmation and payment receipt. this will then allow her (business owner) to 5. see all orders on a dashboard. 6. check off when orders are completed. and finally 7. be able to print a receipt for each order on demand. Users should also be able to 8. view their profile and 9. edit their profile (name, phone number, address, payment info).
+
 ## Features Checklist
 
-- [ ] Python-based backend
 - [ ] Docker containerization
   - [ ] Frontend container
   - [ ] Database container
@@ -28,55 +33,29 @@ A Python-based web application for managing service subscriptions and one-time o
 - [ ] QR code generation page
 - [ ] Mobile-first design
 - [ ] Stripe activation check and error handling
-
-
-mkdir docker app app\models app\routes app\services app\templates app\templates\admin app\static app\static\css app\static\js tests
+- [ ] integrate ngrok or similar for easy deployment
 
 ## File Structure
 
 ```
 simple-service-ordering/
-├── docker/
-│ ├── Dockerfile.frontend
-│ └── Dockerfile.database
-├── app/
-│ ├── main.py
-│ ├── config.py
-│ ├── models/
-│ │ ├── init.py
-│ │ ├── user.py
-│ │ └── order.py
-│ ├── routes/
-│ │ ├── init.py
-│ │ ├── auth.py
-│ │ ├── order.py
-│ │ └── admin.py
-│ ├── services/
-│ │ ├── init.py
-│ │ ├── stripe_service.py
-│ │ └── qr_code_service.py
-│ ├── templates/
-│ │ ├── base.html
-│ │ ├── login.html
-│ │ ├── register.html
-│ │ ├── profile.html
-│ │ ├── order_service.html
-│ │ └── admin/
-│ │ ├── dashboard.html
-│ │ └── settings.html
-│ └── static/
-│ ├── css/
-│ │ └── styles.css
-│ └── js/
-│ └── main.js
-├── tests/
-│ ├── init.py
-│ ├── test_auth.py
-│ └── test_order.py
-├── .env.example
-├── config.yaml.example
+├── app_frontend/
+│   ├── templates/
+│   │   ├── base.html
+│   │   ├── index.html
+│   │   ├── profile.html
+│   │   ├── dashboard.html
+│   │   ├── login.html
+│   │   └── register.html
+│   ├── Dockerfile.frontend
+│   ├── main.py
+│   └── requirements.txt
+├── app_database/
+│   └── Dockerfile.database
 ├── docker-compose.yml
-├── requirements.txt
+├── .dockerignore
+├── .gitattributes
+├── .gitignore
 └── README.md
 ```
 

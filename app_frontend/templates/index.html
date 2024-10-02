@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Order Service - Laundry Service{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Order Service</h1>
+
+<form id="orderForm">
+    <div class="mb-3">
+        <label for="serviceType" class="form-label">Service Type</label>
+        <select class="form-select" id="serviceType" required>
+            <option value="">Select a service</option>
+            <option value="standard">Standard Order</option>
+            <option value="rush">Rush Order</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="quantity" class="form-label">Quantity (kg)</label>
+        <input type="number" class="form-control" id="quantity" min="1" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="total" class="form-label">Total</label>
+        <input type="text" class="form-control" id="total" readonly>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Place Order</button>
+</form>
+
+<div id="orderConfirmation" class="mt-4" style="display: none;">
+    <h2>Order Confirmation</h2>
+    <p>Your order has been placed successfully. Order ID: <span id="orderId"></span></p>
+    <p><strong>Payment: In-person at pickup. Online payment coming soon!</strong></p>
+    <button id="printReceipt" class="btn btn-secondary">Print Receipt</button>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const form = document.getElementById('orderForm');
+    const total = document.getElementById('total');
+    const orderConfirmation = document.getElementById('orderConfirmation');
+    const orderId = document.getElementById('orderId');
+    const printReceipt = document.getElementById('printReceipt');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Here you would typically send the order details to your backend
+        // For now, we'll just show the confirmation
+        orderConfirmation.style.display = 'block';
+        form.style.display = 'none';
+        orderId.textContent = 'DUMMY-123'; // Replace with actual order ID
+    });
+
+    printReceipt.addEventListener('click', () => {
+        window.print();
+    });
+
+    // Add logic to calculate and update total based on service type and quantity
+</script>
+{% endblock %}

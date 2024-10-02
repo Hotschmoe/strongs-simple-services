@@ -1,19 +1,26 @@
 version: '3'
 services:
-  frontend:
+  services_frontend:
     build:
-      context: https://github.com/Hotschmoe/strongs-simple-services
+      context: ./app_frontend
       dockerfile: Dockerfile.frontend
     ports:
       - "5000:5000"
     volumes:
-      - .:/app
+      - ./app_frontend:/app
+    environment:
+      - FLASK_ENV=development
+      - STRIPE_SECRET_KEY=your_stripe_secret_key
+      - STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
-  frontend-local:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    ports:
-      - "5000:5000"
+  services_database:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=laundry_service
+      - POSTGRES_USER=your_username
+      - POSTGRES_PASSWORD=your_password
     volumes:
-      - .:/app
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Laundry Service{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Admin Dashboard</h1>
+
+<h2 class="mb-3">Orders</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Service</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.customer_name }}</td>
+            <td>{{ order.service_type }}</td>
+            <td>{{ order.status }}</td>
+            <td>
+                {% if order.status != 'Completed' %}
+                <button class="btn btn-sm btn-success complete-order" data-order-id="{{ order.id }}">Mark Complete</button>
+                {% endif %}
+                <button class="btn btn-sm btn-secondary print-receipt" data-order-id="{{ order.id }}">Print Receipt</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2 class="mt-5 mb-3">Stripe Health</h2>
+<div id="stripeHealth">
+    <p>Status: <span id="stripeStatus">Checking...</span></p>
+</div>
+
+<h2 class="mt-5 mb-3">Settings</h2>
+<form id="settingsForm">
+    <div class="mb-3">
+        <label for="businessName" class="form-label">Business Name</label>
+        <input type="text" class="form-control" id="businessName" value="{{ settings.business_name }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="stripeKey" class="form-label">Stripe API Key</label>
+        <input type="password" class="form-control" id="stripeKey" value="{{ settings.stripe_key }}" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Mark order as complete
+    document.querySelectorAll('.complete-order').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            const orderId = e.target.dataset.orderId;
+            // Here you would send a request to your backend to mark the order as complete
+            alert(`Order ${orderId} marked as complete`);
+            e.target.closest('tr').querySelector('td:nth-child(4)').textContent = 'Completed';
+            e.target.remove();
+        });
+    });
+
+    // Print receipt
+    document.querySelectorAll('.print-receipt').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const orderId = e.target.dataset.orderId;
+            // Here you would typically generate a receipt and open it in a new window for printing
+            alert(`Printing receipt for order ${orderId}`);
+        });
+    });
+
+    // Check Stripe health
+    async function checkStripeHealth() {
+        // Here you would typically send a request to your backend to check Stripe health
+        const stripeStatus = document.getElementById('stripeStatus');
+        stripeStatus.textContent = 'Connected';
+        stripeStatus.style.color = 'green';
+    }
+    checkStripeHealth();
+
+    // Save settings
+    const settingsForm = document.getElementById('settingsForm');
+    settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Here you would typically send the updated settings to your backend
+        alert('Settings saved successfully!');
+    });
+</script>
+{% endblock %}
