@@ -18,22 +18,22 @@ Users should be able to 1. scan qr code. 2. login if not already logged in. 3. s
   - [ ] Login
   - [ ] Profile editing (name, phone number)
 - [ ] Stripe integration
-  - [ ] Subscription management
+  <!-- - [ ] Subscription management -->
   - [ ] One-time service purchases
-- [ ] QR code scanning for service ordering
 - [ ] Service ordering page (/order-service)
   - [ ] Standard and rush options
-  - [ ] Subscription status display
+  <!-- - [ ] Subscription status display -->
 - [ ] Admin functionality
-  - [ ] Database viewing and editing
-  - [ ] Stripe health monitoring
-  - [ ] Settings page
+  - [ ] Database viewing and editing (viewing works, edit button visible but not functional)
+  <!-- - [ ] Stripe health monitoring -->
+  <!-- - [ ] Settings page -->
 - [ ] Environment/config file support
 - [ ] Example config file for demo purposes
 - [ ] QR code generation page
 - [ ] Mobile-first design
 - [ ] Stripe activation check and error handling
 - [ ] integrate ngrok or similar for easy deployment
+- [ ] add a field on ADMIN order page to select user to place an order for
 
 ## File Structure
 

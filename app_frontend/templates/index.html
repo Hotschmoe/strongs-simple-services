@@ -9,15 +9,14 @@
     <div class="mb-3">
         <label for="serviceType" class="form-label">Service Type</label>
         <select class="form-select" id="serviceType" required>
-            <option value="">Select a service</option>
-            <option value="standard">Standard Order</option>
-            <option value="rush">Rush Order</option>
+            <option value="standard" data-price="10">Standard Order ($10 per kg)</option>
+            <option value="rush" data-price="15">Rush Order ($15 per kg)</option>
         </select>
     </div>
 
     <div class="mb-3">
         <label for="quantity" class="form-label">Quantity (kg)</label>
-        <input type="number" class="form-control" id="quantity" min="1" required>
+        <input type="number" class="form-control" id="quantity" min="1" value="1" required>
     </div>
 
     <div class="mb-3">
@@ -40,24 +39,54 @@
 {% block extra_scripts %}
 <script>
     const form = document.getElementById('orderForm');
+    const serviceType = document.getElementById('serviceType');
+    const quantity = document.getElementById('quantity');
     const total = document.getElementById('total');
     const orderConfirmation = document.getElementById('orderConfirmation');
     const orderId = document.getElementById('orderId');
     const printReceipt = document.getElementById('printReceipt');
 
+    function updateTotal() {
+        const price = parseFloat(serviceType.options[serviceType.selectedIndex].dataset.price);
+        const qty = parseFloat(quantity.value);
+        const totalPrice = price * qty;
+        total.value = `$${totalPrice.toFixed(2)}`;
+    }
+
+    serviceType.addEventListener('change', updateTotal);
+    quantity.addEventListener('input', updateTotal);
+
+    updateTotal(); // Initialize total on page load
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        // Here you would typically send the order details to your backend
-        // For now, we'll just show the confirmation
-        orderConfirmation.style.display = 'block';
-        form.style.display = 'none';
-        orderId.textContent = 'DUMMY-123'; // Replace with actual order ID
+        const formData = new FormData(form);
+        formData.append('service_type', serviceType.value);
+        formData.append('quantity', quantity.value);
+        formData.append('total', total.value);
+
+        try {
+            const response = await fetch('/place_order', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                orderConfirmation.style.display = 'block';
+                form.style.display = 'none';
+                orderId.textContent = data.order_id;
+            } else {
+                throw new Error('Failed to place order');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while placing the order. Please try again.');
+        }
     });
 
     printReceipt.addEventListener('click', () => {
         window.print();
     });
-
-    // Add logic to calculate and update total based on service type and quantity
 </script>
 {% endblock %}

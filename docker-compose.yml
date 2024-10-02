@@ -10,6 +10,11 @@ services:
       - ./app_frontend:/app
     environment:
       - FLASK_ENV=development
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=adminpassword
+      - ADMIN_NAME=Admin User
+      - ADMIN_PHONE=1234567890
+      - ADMIN_ADDRESS=123 Admin St, Admin City
       # - STRIPE_SECRET_KEY=your_stripe_secret_key
       # - STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 

@@ -5,54 +5,87 @@
 {% block content %}
 <h1 class="mb-4">Admin Dashboard</h1>
 
-<h2 class="mb-3">Orders</h2>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th>Service</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for order in orders %}
-        <tr>
-            <td>{{ order.id }}</td>
-            <td>{{ order.customer_name }}</td>
-            <td>{{ order.service_type }}</td>
-            <td>{{ order.status }}</td>
-            <td>
-                {% if order.status != 'Completed' %}
-                <button class="btn btn-sm btn-success complete-order" data-order-id="{{ order.id }}">Mark Complete</button>
-                {% endif %}
-                <button class="btn btn-sm btn-secondary print-receipt" data-order-id="{{ order.id }}">Print Receipt</button>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<h2 class="mt-5 mb-3">Stripe Health</h2>
-<div id="stripeHealth">
-    <p>Status: <span id="stripeStatus">Checking...</span></p>
+<h2 class="mb-3">Users</h2>
+<div class="card mb-4">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Admin</th>
+                    <th>Active</th>
+                    <th>Created At</th>
+                    <th>Updated At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone }}</td>
+                    <td>{{ user.address }}</td>
+                    <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+                    <td>{{ 'Yes' if user.is_active else 'No' }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-primary edit-user" data-user-id="{{ user.id }}">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<h2 class="mt-5 mb-3">Settings</h2>
-<form id="settingsForm">
-    <div class="mb-3">
-        <label for="businessName" class="form-label">Business Name</label>
-        <input type="text" class="form-control" id="businessName" value="{{ settings.business_name }}" required>
+<h2 class="mb-3">Orders</h2>
+<div class="card">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Service Type</th>
+                    <th>Quantity (kg)</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Updated At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.user.name }}</td>
+                    <td>{{ order.service_type }}</td>
+                    <td>{{ order.quantity }}</td>
+                    <td>{{ order.total }}</td>
+                    <td>{{ order.status }}</td>
+                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
+                        {% if order.status != 'Completed' %}
+                        <button class="btn btn-sm btn-success complete-order" data-order-id="{{ order.id }}">Mark Complete</button>
+                        {% endif %}
+                        <button class="btn btn-sm btn-secondary print-receipt" data-order-id="{{ order.id }}">Print Receipt</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <div class="mb-3">
-        <label for="stripeKey" class="form-label">Stripe API Key</label>
-        <input type="password" class="form-control" id="stripeKey" value="{{ settings.stripe_key }}" required>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Save Settings</button>
-</form>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -63,7 +96,7 @@
             const orderId = e.target.dataset.orderId;
             // Here you would send a request to your backend to mark the order as complete
             alert(`Order ${orderId} marked as complete`);
-            e.target.closest('tr').querySelector('td:nth-child(4)').textContent = 'Completed';
+            e.target.closest('tr').querySelector('td:nth-child(6)').textContent = 'Completed';
             e.target.remove();
         });
     });
@@ -77,21 +110,24 @@
         });
     });
 
-    // Check Stripe health
-    async function checkStripeHealth() {
-        // Here you would typically send a request to your backend to check Stripe health
-        const stripeStatus = document.getElementById('stripeStatus');
-        stripeStatus.textContent = 'Connected';
-        stripeStatus.style.color = 'green';
-    }
-    checkStripeHealth();
+    // Edit user
+    document.querySelectorAll('.edit-user').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const userId = e.target.dataset.userId;
+            alert(`Edit user with ID: ${userId}`);
+            // Here you would typically redirect to an edit page or open a modal
+        });
+    });
 
-    // Save settings
-    const settingsForm = document.getElementById('settingsForm');
-    settingsForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        // Here you would typically send the updated settings to your backend
-        alert('Settings saved successfully!');
+    // Edit order
+    document.querySelectorAll('.edit-order').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const orderId = e.target.dataset.orderId;
+            alert(`Edit order with ID: ${orderId}`);
+            // Here you would typically redirect to an edit page or open a modal
+        });
     });
 </script>
 {% endblock %}

@@ -1,7 +1,8 @@
-from flask import Flask, render_template, g, redirect, url_for, request, flash, session
-from database import init_db, db
+from flask import Flask, render_template, g, redirect, url_for, request, flash, session, jsonify
+import uuid
+from database import init_db
+from extensions import db
 from models import User, Order
-from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 init_db(app)
@@ -50,9 +51,9 @@ def dashboard():
         flash('You do not have permission to access the dashboard.', 'danger')
         return redirect(url_for('index'))
     
-    orders = Order.query.all()
-    settings = {"business_name": "My Laundry Service", "stripe_key": "pk_test_..."}
-    return render_template('dashboard.html', user=g.user, orders=orders, settings=settings)
+    users = User.query.all()
+    orders = Order.query.join(User).all()
+    return render_template('dashboard.html', users=users, orders=orders)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -98,6 +99,30 @@ def logout():
     session.pop('user_id', None)
     flash('Logged out successfully.', 'success')
     return redirect(url_for('index'))
+
+@app.route('/place_order', methods=['POST'])
+def place_order():
+    if not g.user:
+        return jsonify({'error': 'User not logged in'}), 401
+
+    service_type = request.form.get('service_type')
+    quantity = float(request.form.get('quantity'))
+    total = request.form.get('total')
+
+    order_id = str(uuid.uuid4())
+    new_order = Order(
+        id=order_id,
+        user_id=g.user.id,
+        service_type=service_type,
+        quantity=quantity,
+        total=total,
+        status='Pending'
+    )
+
+    db.session.add(new_order)
+    db.session.commit()
+
+    return jsonify({'order_id': order_id}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

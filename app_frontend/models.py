@@ -1,4 +1,4 @@
-from database import db
+from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(db.Model):
@@ -12,6 +12,7 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    orders = db.relationship('Order', backref='user', lazy=True)
     
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -19,16 +20,12 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
-    # def update_profile(self, name, phone, address):
-    #     self.name = name
-    #     self.phone = phone
-    #     self.address = address
-    #     db.session.commit()
-
 class Order(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(36), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     service_type = db.Column(db.String(120), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    total = db.Column(db.String(120), nullable=False)
     status = db.Column(db.String(120), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
