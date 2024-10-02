@@ -27,13 +27,14 @@ Users should be able to 1. scan qr code. 2. login if not already logged in. 3. s
   - [ ] Database viewing and editing (viewing works, edit button visible but not functional)
   <!-- - [ ] Stripe health monitoring -->
   <!-- - [ ] Settings page -->
-- [ ] Environment/config file support
-- [ ] Example config file for demo purposes
 - [ ] QR code generation page
 - [ ] Mobile-first design
-- [ ] Stripe activation check and error handling
+<!-- - [ ] Stripe activation check and error handling -->
 - [ ] integrate ngrok or similar for easy deployment
 - [ ] add a field on ADMIN order page to select user to place an order for
+- [ ] edit functions on dashboard do not work
+- [ ] at some point we'll want to incorporate stripe for online payments
+- [ ] when we feel good, we'll make a config file so any service provider can use this by entering their business name, description and a json of services that will populate the ordering field
 
 ## File Structure
 
@@ -51,6 +52,7 @@ simple-service-ordering/
 │   ├── main.py
 │   ├── models.py
 │   ├── database.py
+│   ├── extensions.py
 │   └── requirements.txt
 ├── docker-compose.yml
 ├── .dockerignore
@@ -62,22 +64,48 @@ simple-service-ordering/
 ## Setup
 
 1. Clone the repository
-2. Copy the example config file and adjust as needed
-3. Build and run Docker containers
-4. Access the web app at the specified URL
+2. Make sure you have Docker and Docker Compose installed on your system
+3. Create a `.env` file in the root directory with the following content:
+   ```
+   ADMIN_EMAIL=admin@example.com
+   ADMIN_PASSWORD=adminpassword
+   ADMIN_NAME=Admin User
+   ADMIN_PHONE=1234567890
+   ADMIN_ADDRESS=123 Admin St, Admin City
+   ```
+4. Build and run Docker containers:
+   ```
+   docker-compose up --build
+   ```
+5. Access the web app at `http://localhost:5000`
 
 ## Development
 
-[Add development instructions here]
+To run the app in development mode:
+
+1. Follow the setup instructions above
+2. Make changes to the code as needed
+3. The app will automatically reload when changes are detected
 
 ## Deployment
 
-[Add deployment instructions here]
+For production deployment:
+
+1. Update the `docker-compose.yml` file to use production settings
+2. Set up a reverse proxy (e.g., Nginx) to handle HTTPS
+3. Use a production-ready database (e.g., PostgreSQL) instead of SQLite
+4. Set up proper logging and monitoring
 
 ## Contributing
 
-[Add contribution guidelines here]
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a new branch for your feature
+3. Commit your changes
+4. Push to your fork
+5. Submit a pull request
 
 ## License
 
-[Add license information here]
+This project is licensed under the MIT License.
