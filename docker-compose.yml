@@ -10,17 +10,17 @@ services:
       - ./app_frontend:/app
     environment:
       - FLASK_ENV=development
-      - STRIPE_SECRET_KEY=your_stripe_secret_key
-      - STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+      # - STRIPE_SECRET_KEY=your_stripe_secret_key
+      # - STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
-  services_database:
-    image: postgres:13
-    environment:
-      - POSTGRES_DB=laundry_service
-      - POSTGRES_USER=your_username
-      - POSTGRES_PASSWORD=your_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+#   services_database:
+#     image: postgres:13
+#     environment:
+#       - POSTGRES_DB=laundry_service
+#       - POSTGRES_USER=yourusername
+#       - POSTGRES_PASSWORD=your_password
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
 
-volumes:
-  postgres_data:
+# volumes:
+#   postgres_data:

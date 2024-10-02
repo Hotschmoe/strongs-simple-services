@@ -17,7 +17,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
+                    {% if g.user %}
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Order Service</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Update Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>

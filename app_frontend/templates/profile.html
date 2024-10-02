@@ -5,39 +5,22 @@
 {% block content %}
 <h1 class="mb-4">User Profile</h1>
 
-<form id="profileForm">
+<form method="POST" action="{{ url_for('profile') }}">
     <div class="mb-3">
         <label for="name" class="form-label">Name</label>
-        <input type="text" class="form-control" id="name" value="{{ user.name }}" required>
+        <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
     </div>
 
     <div class="mb-3">
         <label for="phone" class="form-label">Phone Number</label>
-        <input type="tel" class="form-control" id="phone" value="{{ user.phone }}" required>
+        <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone }}" required>
     </div>
 
     <div class="mb-3">
         <label for="address" class="form-label">Address</label>
-        <textarea class="form-control" id="address" rows="3" required>{{ user.address }}</textarea>
+        <textarea class="form-control" id="address" name="address" rows="3" required>{{ user.address }}</textarea>
     </div>
 
     <button type="submit" class="btn btn-primary mt-3">Save Changes</button>
 </form>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    const form = document.getElementById('profileForm');
-    const stripe = Stripe('your_publishable_key');
-    const elements = stripe.elements();
-    const paymentElement = elements.create('payment');
-    paymentElement.mount('#paymentElement');
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        // Here you would typically send the updated profile information to your backend
-        // and handle any necessary payment method updates with Stripe
-        alert('Profile updated successfully!');
-    });
-</script>
 {% endblock %}

@@ -1,67 +1,101 @@
 from flask import Flask, render_template, g, redirect, url_for, request, flash, session
+from database import init_db, db
+from models import User, Order
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+init_db(app)
 app.secret_key = 'your_secret_key'  # Replace with a real secret key
-
-class User:
-    def __init__(self, is_authenticated=False, name="", phone="", address=""):
-        self.is_authenticated = is_authenticated
-        self.name = name
-        self.phone = phone
-        self.address = address
 
 @app.before_request
 def before_request():
-    if 'user' not in session:
-        session['user'] = {'is_authenticated': False, 'name': '', 'phone': '', 'address': ''}
-    g.user = User(**session['user'])
+    g.user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user:
+            g.user = user
 
 @app.route('/')
 def index():
-    if not g.user.is_authenticated:
+    if not g.user:
+        flash('Please log in to place an order.', 'warning')
         return redirect(url_for('login'))
     return render_template('index.html', user=g.user)
 
-@app.route('/order')
-def order():
-    return render_template('order.html', user=g.user)
-
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
 def profile():
-    # For demonstration, let's create a user with some data
-    g.user = User(is_authenticated=True, name="John Doe", phone="123-456-7890", address="123 Main St, Anytown, USA")
+    if not g.user:
+        flash('Please log in to view your profile.', 'warning')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        phone = request.form['phone']
+        address = request.form['address']
+
+        g.user.name = name
+        g.user.phone = phone
+        g.user.address = address
+
+        db.session.commit()
+
+        flash('Profile updated successfully.', 'success')
+        return redirect(url_for('profile'))
+
     return render_template('profile.html', user=g.user)
 
 @app.route('/dashboard')
 def dashboard():
-    # Placeholder data for orders
-    orders = [
-        {"id": 1, "customer_name": "Alice", "service_type": "Standard Wash", "status": "Pending"},
-        {"id": 2, "customer_name": "Bob", "service_type": "Rush Wash", "status": "Completed"},
-    ]
+    if not g.user or not g.user.is_admin:
+        flash('You do not have permission to access the dashboard.', 'danger')
+        return redirect(url_for('index'))
+    
+    orders = Order.query.all()
     settings = {"business_name": "My Laundry Service", "stripe_key": "pk_test_..."}
     return render_template('dashboard.html', user=g.user, orders=orders, settings=settings)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Always set the user as authenticated for now
-        session['user'] = {'is_authenticated': True, 'name': 'John Doe', 'phone': '123-456-7890', 'address': '123 Main St, Anytown, USA'}
-        print("User authenticated, redirecting to index")  # Debug print
-        return redirect(url_for('index'))
+        email = request.form['email']
+        password = request.form['password']
+
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            session['user_id'] = user.id
+            flash('Logged in successfully.', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid email or password.', 'danger')
     return render_template('login.html', user=g.user)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        # Here you would typically create a new user account
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        phone = request.form['phone']
+        address = request.form['address']
+
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash('Email already registered. Please use a different email.', 'danger')
+            return redirect(url_for('register'))
+
+        new_user = User(name=name, email=email, phone=phone, address=address)
+        new_user.set_password(password)
+
+        db.session.add(new_user)
+        db.session.commit()
+
         flash('Account created successfully. Please log in.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', user=g.user)
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
+    session.pop('user_id', None)
     flash('Logged out successfully.', 'success')
     return redirect(url_for('index'))
 

@@ -49,9 +49,9 @@ simple-service-ordering/
 │   │   └── register.html
 │   ├── Dockerfile.frontend
 │   ├── main.py
+│   ├── models.py
+│   ├── database.py
 │   └── requirements.txt
-├── app_database/
-│   └── Dockerfile.database
 ├── docker-compose.yml
 ├── .dockerignore
 ├── .gitattributes
