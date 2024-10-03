@@ -33,7 +33,7 @@ Users should be able to 1. scan qr code. 2. login if not already logged in. 3. s
 - [ ] add a field on ADMIN order page to select user to place an order for
 - [ ] edit functions on dashboard do not work
 - [ ] at some point we'll want to incorporate stripe for online payments
-- [ ] when we feel good, we'll make a config file so any service provider can use this by entering their business name, description and a json of services that will populate the ordering field
+- [x] when we feel good, we'll make a config file so any service provider can use this by entering their business name, description and a json of services that will populate the ordering field
 - [x] Integrate ngrok for easy public access
 
 ## File Structure

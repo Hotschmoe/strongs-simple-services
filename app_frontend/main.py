@@ -6,10 +6,32 @@ from models import User, Order
 import qrcode
 import io
 import base64
+import json
+import os
 
 app = Flask(__name__)
 init_db(app)
 app.secret_key = 'your_secret_key'  # Replace with a real secret key
+
+# Load business configuration
+config_path = os.environ.get('BUSINESS_CONFIG_PATH', '/app/business_config.json')
+try:
+    with open(config_path) as config_file:
+        business_config = json.load(config_file)
+except FileNotFoundError:
+    app.logger.error(f"Business configuration file not found at {config_path}")
+    business_config = {
+        "businessName": "Default Business",
+        "businessDescription": "Default description",
+        "services": []
+    }
+except json.JSONDecodeError:
+    app.logger.error(f"Invalid JSON in business configuration file at {config_path}")
+    business_config = {
+        "businessName": "Default Business",
+        "businessDescription": "Default description",
+        "services": []
+    }
 
 @app.before_request
 def before_request():
@@ -18,13 +40,14 @@ def before_request():
         user = User.query.get(session['user_id'])
         if user:
             g.user = user
+    g.business_config = business_config
 
 @app.route('/')
 def index():
     if not g.user:
         flash('Please log in to place an order.', 'warning')
         return redirect(url_for('login'))
-    return render_template('index.html', user=g.user)
+    return render_template('index.html', user=g.user, business_config=business_config)
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -46,7 +69,7 @@ def profile():
         flash('Profile updated successfully.', 'success')
         return redirect(url_for('profile'))
 
-    return render_template('profile.html', user=g.user)
+    return render_template('profile.html', user=g.user, business_config=business_config)
 
 @app.route('/dashboard')
 def dashboard():
@@ -56,7 +79,7 @@ def dashboard():
     
     users = User.query.all()
     orders = Order.query.join(User).all()
-    return render_template('dashboard.html', users=users, orders=orders)
+    return render_template('dashboard.html', users=users, orders=orders, business_config=business_config)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -71,7 +94,7 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Invalid email or password.', 'danger')
-    return render_template('login.html', user=g.user)
+    return render_template('login.html', user=g.user, business_config=business_config)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -95,7 +118,7 @@ def register():
 
         flash('Account created successfully. Please log in.', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html', user=g.user)
+    return render_template('register.html', user=g.user, business_config=business_config)
 
 @app.route('/logout')
 def logout():
@@ -146,7 +169,7 @@ def qr_code():
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
     
-    return render_template('qr_code.html', qr_code=img_str)
+    return render_template('qr_code.html', qr_code=img_str, business_config=business_config)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

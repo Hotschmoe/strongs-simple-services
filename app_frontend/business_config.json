@@ -1,0 +1,21 @@
+{
+    "businessName": "Ponderosa Paintworks",
+    "businessDescription": "Cerakote coating and custom paintwork",
+    "services": [
+      {
+        "name": "Standard Paint",
+        "description": "Regular paint service",
+        "price": 10
+      },
+      {
+        "name": "Rush Paint",
+        "description": "Expedited paint service",
+        "price": 15
+      },
+      {
+        "name": "Cerakote",
+        "description": "Cerakote coating",
+        "price": 20
+      }
+    ]
+  }

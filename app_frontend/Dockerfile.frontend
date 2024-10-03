@@ -6,5 +6,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+COPY business_config.json /app/business_config.json
 
 CMD ["python", "main.py"]
