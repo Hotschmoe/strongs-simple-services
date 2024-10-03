@@ -10,31 +10,31 @@ Users should be able to 1. scan qr code. 2. login if not already logged in. 3. s
 
 ## Features Checklist
 
-- [ ] Docker containerization
-  - [ ] Frontend container
-  - [ ] Database container
-- [ ] User account management
-  - [ ] Registration
-  - [ ] Login
-  - [ ] Profile editing (name, phone number)
+- [x] Docker containerization
+  - [x] Frontend container
+  - [x] Database - SQLite
+- [x] User account management
+  - [x] Registration
+  - [x] Login
+  - [x] Profile editing (name, phone number)
 - [ ] Stripe integration
   <!-- - [ ] Subscription management -->
   - [ ] One-time service purchases
-- [ ] Service ordering page (/order-service)
-  - [ ] Standard and rush options
+- [x] Service ordering page
+  - [x] Standard and rush options
   <!-- - [ ] Subscription status display -->
 - [ ] Admin functionality
   - [ ] Database viewing and editing (viewing works, edit button visible but not functional)
   <!-- - [ ] Stripe health monitoring -->
   <!-- - [ ] Settings page -->
-- [ ] QR code generation page
-- [ ] Mobile-first design
+- [x] QR code generation page
+- [x] Mobile-first design
 <!-- - [ ] Stripe activation check and error handling -->
-- [ ] integrate ngrok or similar for easy deployment
 - [ ] add a field on ADMIN order page to select user to place an order for
 - [ ] edit functions on dashboard do not work
 - [ ] at some point we'll want to incorporate stripe for online payments
 - [ ] when we feel good, we'll make a config file so any service provider can use this by entering their business name, description and a json of services that will populate the ordering field
+- [x] Integrate ngrok for easy public access
 
 ## File Structure
 
@@ -72,12 +72,19 @@ simple-service-ordering/
    ADMIN_NAME=Admin User
    ADMIN_PHONE=1234567890
    ADMIN_ADDRESS=123 Admin St, Admin City
+   NGROK_AUTH_TOKEN=your_ngrok_auth_token
    ```
-4. Build and run Docker containers:
+4. Sign up for a free ngrok account at https://ngrok.com/ and get your auth token
+5. Replace `your_ngrok_auth_token` in the `.env` file with your actual ngrok auth token
+6. Build and run Docker containers:
    ```
    docker-compose up --build
    ```
-5. Access the web app at `http://localhost:5000`
+7. Access the web app locally at `http://localhost:5000`
+8. To access the public URL:
+   - Open `http://localhost:4040` in your browser
+   - Look for the "Forwarding" URL (e.g., `https://abcd1234.ngrok.io`)
+   - Use this URL to access your web app from anywhere
 
 ## Development
 
@@ -87,7 +94,7 @@ To run the app in development mode:
 2. Make changes to the code as needed
 3. The app will automatically reload when changes are detected
 
-## Deployment
+## Deployment and Public Access
 
 For production deployment:
 
@@ -95,6 +102,28 @@ For production deployment:
 2. Set up a reverse proxy (e.g., Nginx) to handle HTTPS
 3. Use a production-ready database (e.g., PostgreSQL) instead of SQLite
 4. Set up proper logging and monitoring
+
+### Public Access Options
+
+To make your web app accessible from the internet, you have several options:
+
+1. **Port Forwarding**: Configure your router to forward incoming traffic on a specific port to your local machine. This is suitable for simple setups but may have security implications.
+
+2. **Reverse Proxy**: Set up a reverse proxy server (like Nginx or Traefik) on a publicly accessible server. This provides more control and security features.
+
+3. **ngrok (for development/testing)**: We've included a commented-out ngrok service in the `docker-compose.yml` file for easy setup during development or testing. To use it:
+
+   a. Uncomment the ngrok service in `docker-compose.yml`
+   b. Add your ngrok auth token to the `.env` file:
+      ```
+      NGROK_AUTHTOKEN=your_ngrok_auth_token
+      ```
+   c. Run `docker-compose up` to start the services
+   d. Access the ngrok interface at `http://localhost:4040` to find your public URL
+
+   Note: ngrok is not recommended for production use due to its temporary nature and potential security concerns.
+
+For production environments, we recommend using a reverse proxy with proper HTTPS configuration. This provides better security, performance, and control over your deployment.
 
 ## Contributing
 

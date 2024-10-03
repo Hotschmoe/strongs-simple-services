@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code Generator - Laundry Service{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">QR Code Generator</h1>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Scan this QR code to access the order page</h5>
+        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid mb-3">
+        <p class="card-text">This QR code points to the order page of your laundry service.</p>
+        <button onclick="window.print()" class="btn btn-primary">Print QR Code</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .card, .card * {
+            visibility: visible;
+        }
+        .card {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        .btn-primary {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}

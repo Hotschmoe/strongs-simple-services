@@ -3,6 +3,9 @@ import uuid
 from database import init_db
 from extensions import db
 from models import User, Order
+import qrcode
+import io
+import base64
 
 app = Flask(__name__)
 init_db(app)
@@ -123,6 +126,27 @@ def place_order():
     db.session.commit()
 
     return jsonify({'order_id': order_id}), 200
+
+@app.route('/qr-code')
+def qr_code():
+    if not g.user or not g.user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('index'))
+    
+    current_domain = request.host_url.rstrip('/')
+    order_url = f"{current_domain}/"
+    
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(order_url)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    
+    return render_template('qr_code.html', qr_code=img_str)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

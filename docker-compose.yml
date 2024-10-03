@@ -9,23 +9,28 @@ services:
     volumes:
       - ./app_frontend:/app
     environment:
-      - FLASK_ENV=development
-      - ADMIN_EMAIL=admin@example.com
-      - ADMIN_PASSWORD=adminpassword
-      - ADMIN_NAME=Admin User
-      - ADMIN_PHONE=1234567890
-      - ADMIN_ADDRESS=123 Admin St, Admin City
-      # - STRIPE_SECRET_KEY=your_stripe_secret_key
-      # - STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+      - FLASK_ENV=${FLASK_ENV}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_NAME=${ADMIN_NAME}
+      - ADMIN_PHONE=${ADMIN_PHONE}
+      - ADMIN_ADDRESS=${ADMIN_ADDRESS}
+      # - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      # - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
 
-#   services_database:
-#     image: postgres:13
-#     environment:
-#       - POSTGRES_DB=laundry_service
-#       - POSTGRES_USER=yourusername
-#       - POSTGRES_PASSWORD=your_password
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
-
-# volumes:
-#   postgres_data:
+  ngrok:
+    image: wernight/ngrok
+    ports:
+      - "4040:4040"
+    command: ngrok http services_frontend:5000
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}  
+      # Optional additional environment variables:
+      # - NGROK_SUBDOMAIN=${NGROK_SUBDOMAIN}
+      # - NGROK_HOSTNAME=${NGROK_HOSTNAME}
+      # - NGROK_USERNAME=${NGROK_USERNAME}
+      # - NGROK_PASSWORD=${NGROK_PASSWORD}
+      # - NGROK_REGION=${NGROK_REGION}
+      # - NGROK_HEADER=${NGROK_HEADER}
+    depends_on:
+      - services_frontend
