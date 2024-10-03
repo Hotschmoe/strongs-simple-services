@@ -1,4 +1,4 @@
-from flask import Flask, render_template, g, redirect, url_for, request, flash, session, jsonify
+from flask import Flask, render_template, g, redirect, url_for, request, flash, session, jsonify, send_from_directory
 import uuid
 from database import init_db
 from extensions import db
@@ -170,6 +170,10 @@ def qr_code():
     img_str = base64.b64encode(buffered.getvalue()).decode()
     
     return render_template('qr_code.html', qr_code=img_str, business_config=business_config)
+
+@app.route('/robots.txt')
+def robots_txt():
+    return send_from_directory(app.static_folder, 'robots.txt')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

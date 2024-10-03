@@ -43,16 +43,18 @@ simple-service-ordering/
 ├── app_frontend/
 │   ├── templates/
 │   │   ├── base.html
-│   │   ├── index.html
-│   │   ├── profile.html
 │   │   ├── dashboard.html
+│   │   ├── index.html
 │   │   ├── login.html
+│   │   ├── profile.html
+│   │   ├── qr_code.html
 │   │   └── register.html
 │   ├── Dockerfile.frontend
-│   ├── main.py
-│   ├── models.py
+│   ├── business_config.json
 │   ├── database.py
 │   ├── extensions.py
+│   ├── main.py
+│   ├── models.py
 │   └── requirements.txt
 ├── docker-compose.yml
 ├── .dockerignore
