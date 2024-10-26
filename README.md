@@ -19,7 +19,6 @@ Users should be able to 1. scan qr code. 2. login if not already logged in. 3. s
   - [x] Profile editing (name, phone number)
 - [ ] Stripe integration
   <!-- - [ ] Subscription management -->
-  - [ ] One-time service purchases
 - [x] Service ordering page
   - [x] Standard and rush options
   <!-- - [ ] Subscription status display -->
@@ -32,9 +31,21 @@ Users should be able to 1. scan qr code. 2. login if not already logged in. 3. s
 - [x] Mobile-first design
 <!-- - [ ] Stripe activation check and error handling -->
 - [ ] add a field on ADMIN order page to select user to place an order for
-- [ ] at some point we'll want to incorporate stripe for online payments
 - [x] when we feel good, we'll make a config file so any service provider can use this by entering their business name, description and a json of services that will populate the ordering field
 - [x] Integrate ngrok for easy public access
+
+- [ ] Make subscription based services in config file as option
+- [ ] Pay one-time order with stripe
+- [ ] Pay subscription with stripe
+- [ ] subscription status display on dashboard - admin
+- [ ] subscription management on profile page - user
+- [ ] User to order service (e.g. wash pickup) if subscription is active (show remaining service count for month)
+- [ ] About biz page - config in business_config.json - simple text, contact, possibly image and links to social media
+- [ ] DASHBOARD - make edit more formlike
+- [ ] move business config to database? (with default values to init database)
+- [ ] update readme to reflect current status
+- [ ] update readme to show how to use static directory for favicon and images
+- [ ] add image option to services under business_config.json that links to static directory - force image size? (e.g. 100x100)
 
 ## File Structure
 
