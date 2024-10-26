@@ -5,17 +5,30 @@
       {
         "name": "Standard Paint",
         "description": "Regular paint service",
-        "price": 10
+        "price": 10,
+        "subscription": {
+          "available": true,
+          "monthlyPrice": 35,
+          "quantityPerMonth": 4
+        }
       },
       {
         "name": "Rush Paint",
         "description": "Expedited paint service",
-        "price": 15
+        "price": 15,
+        "subscription": {
+          "available": false
+        }
       },
       {
         "name": "Cerakote",
         "description": "Cerakote coating",
-        "price": 20
+        "price": 20,
+        "subscription": {
+          "available": true,
+          "monthlyPrice": 70,
+          "quantityPerMonth": 4
+        }
       }
     ]
   }

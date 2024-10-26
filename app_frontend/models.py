@@ -24,10 +24,23 @@ class Order(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     service_type = db.Column(db.String(120), nullable=False)
+    order_type = db.Column(db.String(20), nullable=False)  # 'one-time' or 'subscription'
     quantity = db.Column(db.Float, nullable=False)
     total = db.Column(db.String(120), nullable=False)
     status = db.Column(db.String(120), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
+class Subscription(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    service_type = db.Column(db.String(120), nullable=False)
+    monthly_price = db.Column(db.Float, nullable=False)
+    quantity_per_month = db.Column(db.Integer, nullable=False)
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
+    user = db.relationship('User', backref=db.backref('subscriptions', lazy=True))

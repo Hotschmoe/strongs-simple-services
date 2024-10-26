@@ -13,10 +13,20 @@
             <div id="serviceCards">
                 {% for service in business_config['services'] %}
                 <div class="service-card-wrapper">
-                    <div class="card service-card" data-service="{{ service['name'].lower().replace(' ', '_') }}" data-price="{{ service['price'] }}">
+                    <div class="card service-card" 
+                         data-service="{{ service['name'].lower().replace(' ', '_') }}" 
+                         data-price="{{ service['price'] }}"
+                         data-subscription-available="{{ service['subscription']['available'] }}"
+                         data-subscription-price="{{ service['subscription']['monthlyPrice'] }}"
+                         data-subscription-quantity="{{ service['subscription']['quantityPerMonth'] }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ service['name'] }}</h5>
-                            <p class="card-text">${{ service['price'] }}</p>
+                            <p class="card-text mb-1">One-time: ${{ service['price'] }}</p>
+                            {% if service['subscription']['available'] %}
+                            <p class="text-center my-1"><em>or</em></p>
+                            <p class="card-text mb-1">Subscription: ${{ service['subscription']['monthlyPrice'] }}/month</p>
+                            <p class="card-text">({{ service['subscription']['quantityPerMonth'] }} services/month)</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -25,13 +35,20 @@
         </div>
 
         <div class="mb-3">
+            <label for="orderType" class="form-label">Order Type</label>
+            <select class="form-select" id="orderType">
+                <option value="">Select a service first</option>
+            </select>
+        </div>
+
+        <div class="mb-3" id="quantityField">
             <label for="quantity" class="form-label">Quantity</label>
             <input type="number" class="form-control" id="quantity" min="1" value="1" required>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Total</label>
-            <div id="total" class="form-control-plaintext">$10.00</div>
+            <div id="total" class="form-control-plaintext">$0.00</div>
         </div>
 
         <button type="submit" class="btn btn-primary">Place Order</button>
@@ -50,6 +67,8 @@
 <script>
     const form = document.getElementById('orderForm');
     const serviceCards = document.getElementById('serviceCards');
+    const orderType = document.getElementById('orderType');
+    const quantityField = document.getElementById('quantityField');
     const quantity = document.getElementById('quantity');
     const total = document.getElementById('total');
     const orderConfirmation = document.getElementById('orderConfirmation');
@@ -58,10 +77,36 @@
 
     let selectedService = null;
 
-    function updateTotal() {
+    function updateOrderTypeOptions() {
+        orderType.innerHTML = '';
         if (selectedService) {
-            const price = parseFloat(selectedService.dataset.price);
-            const qty = parseFloat(quantity.value);
+            const oneTimeOption = document.createElement('option');
+            oneTimeOption.value = 'one-time';
+            oneTimeOption.textContent = 'One-time Order';
+            orderType.appendChild(oneTimeOption);
+
+            if (selectedService.dataset.subscriptionAvailable === 'True') {
+                const subscriptionOption = document.createElement('option');
+                subscriptionOption.value = 'subscription';
+                subscriptionOption.textContent = 'Subscription';
+                orderType.appendChild(subscriptionOption);
+            }
+        } else {
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select a service first';
+            orderType.appendChild(defaultOption);
+        }
+        updateTotal();
+    }
+
+    function updateTotal() {
+        if (selectedService && orderType.value) {
+            const isSubscription = orderType.value === 'subscription';
+            const price = isSubscription
+                ? parseFloat(selectedService.dataset.subscriptionPrice)
+                : parseFloat(selectedService.dataset.price);
+            const qty = isSubscription ? 1 : parseFloat(quantity.value);
             const totalPrice = price * qty;
             total.textContent = `$${totalPrice.toFixed(2)}`;
         } else {
@@ -75,22 +120,28 @@
             document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
             selectedService = card;
-            updateTotal();
+            updateOrderTypeOptions();
         }
+    });
+
+    orderType.addEventListener('change', () => {
+        quantityField.style.display = orderType.value === 'subscription' ? 'none' : 'block';
+        updateTotal();
     });
 
     quantity.addEventListener('input', updateTotal);
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!selectedService) {
-            alert('Please select a service');
+        if (!selectedService || !orderType.value) {
+            alert('Please select a service and order type');
             return;
         }
         const formData = new FormData(form);
         formData.append('service_type', selectedService.dataset.service);
-        formData.append('quantity', quantity.value);
-        formData.append('total', total.value);
+        formData.append('order_type', orderType.value);
+        formData.append('quantity', orderType.value === 'subscription' ? '1' : quantity.value);
+        formData.append('total', total.textContent.substring(1));
 
         try {
             const response = await fetch('/place_order', {
@@ -157,6 +208,35 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
+        padding: 1rem;
+    }
+
+    .service-card .card-title {
+        margin-bottom: 0.5rem;
+    }
+
+    .service-card .card-text {
+        margin-bottom: 0.25rem;
+    }
+
+    .service-card p.text-center {
+        font-style: italic;
+        color: #6c757d;
+        margin: 0.25rem 0;
+    }
+
+    .service-card hr {
+        border-top: 1px solid #dee2e6;
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .service-card p.text-center {
+        font-style: italic;
+        color: #6c757d;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 
     body.dark-mode .service-card {
