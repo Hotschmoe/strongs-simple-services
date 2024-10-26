@@ -94,39 +94,127 @@
     document.querySelectorAll('.complete-order').forEach(button => {
         button.addEventListener('click', async (e) => {
             const orderId = e.target.dataset.orderId;
-            // Here you would send a request to your backend to mark the order as complete
-            alert(`Order ${orderId} marked as complete`);
-            e.target.closest('tr').querySelector('td:nth-child(6)').textContent = 'Completed';
-            e.target.remove();
+            try {
+                const response = await fetch(`/api/order/${orderId}/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    e.target.closest('tr').querySelector('td:nth-child(6)').textContent = 'Completed';
+                    e.target.remove();
+                } else {
+                    alert('Failed to complete order');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to complete order');
+            }
         });
     });
 
     // Print receipt
     document.querySelectorAll('.print-receipt').forEach(button => {
-        button.addEventListener('click', (e) => {
+        button.addEventListener('click', async (e) => {
             const orderId = e.target.dataset.orderId;
-            // Here you would typically generate a receipt and open it in a new window for printing
-            alert(`Printing receipt for order ${orderId}`);
+            try {
+                const response = await fetch(`/api/order/${orderId}/receipt`);
+                const receiptData = await response.json();
+                
+                // Create a new window with receipt content
+                const receiptWindow = window.open('', '_blank');
+                receiptWindow.document.write(`
+                    <h2>${business_config.businessName} - Receipt</h2>
+                    <p>Order ID: ${receiptData.order_id}</p>
+                    <p>Customer: ${receiptData.customer}</p>
+                    <p>Service: ${receiptData.service_type}</p>
+                    <p>Quantity: ${receiptData.quantity} kg</p>
+                    <p>Total: ${receiptData.total}</p>
+                    <p>Date: ${receiptData.date}</p>
+                `);
+                receiptWindow.print();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to generate receipt');
+            }
         });
     });
 
     // Edit user
     document.querySelectorAll('.edit-user').forEach(button => {
-        button.addEventListener('click', (e) => {
+        button.addEventListener('click', async (e) => {
             e.preventDefault();
             const userId = e.target.dataset.userId;
-            alert(`Edit user with ID: ${userId}`);
-            // Here you would typically redirect to an edit page or open a modal
+            
+            try {
+                const response = await fetch(`/api/user/${userId}`);
+                const userData = await response.json();
+                
+                // Create and show modal with form
+                const newData = prompt(
+                    'Edit user data (JSON format):',
+                    JSON.stringify(userData, null, 2)
+                );
+                
+                if (newData) {
+                    const updateResponse = await fetch(`/api/user/${userId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: newData
+                    });
+                    
+                    if (updateResponse.ok) {
+                        location.reload(); // Refresh to see changes
+                    } else {
+                        alert('Failed to update user');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to edit user');
+            }
         });
     });
 
     // Edit order
     document.querySelectorAll('.edit-order').forEach(button => {
-        button.addEventListener('click', (e) => {
+        button.addEventListener('click', async (e) => {
             e.preventDefault();
             const orderId = e.target.dataset.orderId;
-            alert(`Edit order with ID: ${orderId}`);
-            // Here you would typically redirect to an edit page or open a modal
+            
+            try {
+                const response = await fetch(`/api/order/${orderId}`);
+                const orderData = await response.json();
+                
+                // Create and show modal with form
+                const newData = prompt(
+                    'Edit order data (JSON format):',
+                    JSON.stringify(orderData, null, 2)
+                );
+                
+                if (newData) {
+                    const updateResponse = await fetch(`/api/order/${orderId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: newData
+                    });
+                    
+                    if (updateResponse.ok) {
+                        location.reload(); // Refresh to see changes
+                    } else {
+                        alert('Failed to update order');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to edit order');
+            }
         });
     });
 </script>

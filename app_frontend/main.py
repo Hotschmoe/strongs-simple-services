@@ -175,5 +175,90 @@ def qr_code():
 def robots_txt():
     return send_from_directory(app.static_folder, 'robots.txt')
 
+# Add these new routes
+@app.route('/api/order/<order_id>/complete', methods=['POST'])
+def complete_order(order_id):
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    order = Order.query.get_or_404(order_id)
+    order.status = 'Completed'
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/api/order/<order_id>/receipt', methods=['GET'])
+def get_receipt(order_id):
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    order = Order.query.get_or_404(order_id)
+    receipt_data = {
+        'order_id': order.id,
+        'customer': order.user.name,
+        'service_type': order.service_type,
+        'quantity': order.quantity,
+        'total': order.total,
+        'date': order.created_at.strftime('%Y-%m-%d %H:%M:%S')
+    }
+    
+    return jsonify(receipt_data)
+
+@app.route('/api/user/<user_id>', methods=['GET', 'PUT'])
+def manage_user(user_id):
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    
+    if request.method == 'GET':
+        return jsonify({
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'phone': user.phone,
+            'address': user.address,
+            'is_admin': user.is_admin,
+            'is_active': user.is_active
+        })
+    
+    elif request.method == 'PUT':
+        data = request.json
+        user.name = data.get('name', user.name)
+        user.email = data.get('email', user.email)
+        user.phone = data.get('phone', user.phone)
+        user.address = data.get('address', user.address)
+        user.is_admin = data.get('is_admin', user.is_admin)
+        user.is_active = data.get('is_active', user.is_active)
+        
+        db.session.commit()
+        return jsonify({'success': True})
+
+@app.route('/api/order/<order_id>', methods=['GET', 'PUT'])
+def manage_order(order_id):
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    order = Order.query.get_or_404(order_id)
+    
+    if request.method == 'GET':
+        return jsonify({
+            'id': order.id,
+            'service_type': order.service_type,
+            'quantity': order.quantity,
+            'total': order.total,
+            'status': order.status
+        })
+    
+    elif request.method == 'PUT':
+        data = request.json
+        order.service_type = data.get('service_type', order.service_type)
+        order.quantity = data.get('quantity', order.quantity)
+        order.total = data.get('total', order.total)
+        order.status = data.get('status', order.status)
+        
+        db.session.commit()
+        return jsonify({'success': True})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
