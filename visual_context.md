@@ -5,6 +5,7 @@ Frontend: HTML templates with Bootstrap for styling
 Containerization: Docker for easy deployment
 Additional Services: ngrok for public access during development
 
+```mermaid
 graph TD
     A[User] -->|Accesses| B[Web Browser]
     B -->|Sends HTTP Request| C[Flask Web Application]
@@ -33,3 +34,4 @@ graph TD
     C --> L
     E --> M
     E --> N
+```
