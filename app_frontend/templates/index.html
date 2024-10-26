@@ -3,46 +3,47 @@
 {% block title %}Order Service - {{ business_config['businessName'] }}{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Order Service</h1>
-<p>{{ business_config['businessDescription'] }}</p>
+<div class="text-center">
+    <h1 class="mb-4">Order Service</h1>
+    <p>{{ business_config['businessDescription'] }}</p>
 
-<form id="orderForm">
-    <div class="mb-3">
-        <label class="form-label">Service Type</label>
-        <div class="row" id="serviceCards">
-            {% for service in business_config['services'] %}
-            <div class="col-md-4 mb-3">
-                <div class="card service-card" data-service="{{ service['name'].lower().replace(' ', '_') }}" data-price="{{ service['price'] }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ service['name'] }}</h5>
-                        <p class="card-text">${{ service['price'] }}</p>
+    <form id="orderForm" class="mx-auto" style="max-width: 500px;">
+        <div class="mb-3">
+            <label class="form-label">Service Type</label>
+            <div id="serviceCards">
+                {% for service in business_config['services'] %}
+                <div class="service-card-wrapper">
+                    <div class="card service-card" data-service="{{ service['name'].lower().replace(' ', '_') }}" data-price="{{ service['price'] }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ service['name'] }}</h5>
+                            <p class="card-text">${{ service['price'] }}</p>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
+
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="quantity" min="1" value="1" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Total</label>
+            <div id="total" class="form-control-plaintext">$10.00</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Place Order</button>
+    </form>
+
+    <div id="orderConfirmation" class="mt-4" style="display: none;">
+        <h2>Order Confirmation</h2>
+        <p>Your order has been placed successfully. Order ID: <span id="orderId"></span></p>
+        <p><strong>Payment: In-person at pickup. Online payment coming soon!</strong></p>
+        <button id="printReceipt" class="btn btn-secondary">Print Receipt</button>
     </div>
-
-    <div class="mb-3">
-        <label for="quantity" class="form-label">Quantity</label>
-        <input type="number" class="form-control" id="quantity" min="1" value="1" required>
-    </div>
-
-    <div class="mb-3">
-        <label for="total" class="form-label">Total</label>
-        <input type="text" class="form-control" id="total" readonly>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Place Order</button>
-</form>
-
-<div id="orderConfirmation" class="mt-4" style="display: none;">
-    <h2>Order Confirmation</h2>
-    <p>Your order has been placed successfully. Order ID: <span id="orderId"></span></p>
-    <p><strong>Payment: In-person at pickup. Online payment coming soon!</strong></p>
-    <button id="printReceipt" class="btn btn-secondary">Print Receipt</button>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
@@ -62,20 +63,18 @@
             const price = parseFloat(selectedService.dataset.price);
             const qty = parseFloat(quantity.value);
             const totalPrice = price * qty;
-            total.value = `$${totalPrice.toFixed(2)}`;
+            total.textContent = `$${totalPrice.toFixed(2)}`;
         } else {
-            total.value = '$0.00';
+            total.textContent = '$0.00';
         }
     }
 
     serviceCards.addEventListener('click', (e) => {
         const card = e.target.closest('.service-card');
         if (card) {
-            if (selectedService) {
-                selectedService.classList.remove('bg-primary', 'text-white');
-            }
+            document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
             selectedService = card;
-            card.classList.add('bg-primary', 'text-white');
             updateTotal();
         }
     });
@@ -117,4 +116,69 @@
         window.print();
     });
 </script>
+{% endblock %}
+
+{% block page_specific_css %}
+<style>
+    #serviceCards {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .service-card-wrapper {
+        flex: 1 1 200px;
+        max-width: 300px;
+        display: flex;
+    }
+
+    .service-card {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid #e0e0e0;
+    }
+
+    .service-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .service-card.selected {
+        background-color: #f8f9fa;
+        border-color: #025;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .service-card .card-body {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    body.dark-mode .service-card {
+        border-color: #4a4a4a;
+    }
+
+    body.dark-mode .service-card.selected {
+        background-color: #2c3e50;
+        border-color: #3498db;
+    }
+
+    #total.form-control-plaintext {
+        padding: 0.375rem 0.75rem;
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .service-card-wrapper {
+            flex-basis: 100%;
+        }
+    }
+</style>
 {% endblock %}
