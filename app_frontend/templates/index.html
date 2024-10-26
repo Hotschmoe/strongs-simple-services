@@ -8,12 +8,19 @@
 
 <form id="orderForm">
     <div class="mb-3">
-        <label for="serviceType" class="form-label">Service Type</label>
-        <select class="form-select" id="serviceType" required>
+        <label class="form-label">Service Type</label>
+        <div class="row" id="serviceCards">
             {% for service in business_config['services'] %}
-            <option value="{{ service['name'].lower().replace(' ', '_') }}" data-price="{{ service['price'] }}">{{ service['name'] }} (${{ service['price'] }})</option>
+            <div class="col-md-4 mb-3">
+                <div class="card service-card" data-service="{{ service['name'].lower().replace(' ', '_') }}" data-price="{{ service['price'] }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ service['name'] }}</h5>
+                        <p class="card-text">${{ service['price'] }}</p>
+                    </div>
+                </div>
+            </div>
             {% endfor %}
-        </select>
+        </div>
     </div>
 
     <div class="mb-3">
@@ -41,29 +48,48 @@
 {% block extra_scripts %}
 <script>
     const form = document.getElementById('orderForm');
-    const serviceType = document.getElementById('serviceType');
+    const serviceCards = document.getElementById('serviceCards');
     const quantity = document.getElementById('quantity');
     const total = document.getElementById('total');
     const orderConfirmation = document.getElementById('orderConfirmation');
     const orderId = document.getElementById('orderId');
     const printReceipt = document.getElementById('printReceipt');
 
+    let selectedService = null;
+
     function updateTotal() {
-        const price = parseFloat(serviceType.options[serviceType.selectedIndex].dataset.price);
-        const qty = parseFloat(quantity.value);
-        const totalPrice = price * qty;
-        total.value = `$${totalPrice.toFixed(2)}`;
+        if (selectedService) {
+            const price = parseFloat(selectedService.dataset.price);
+            const qty = parseFloat(quantity.value);
+            const totalPrice = price * qty;
+            total.value = `$${totalPrice.toFixed(2)}`;
+        } else {
+            total.value = '$0.00';
+        }
     }
 
-    serviceType.addEventListener('change', updateTotal);
-    quantity.addEventListener('input', updateTotal);
+    serviceCards.addEventListener('click', (e) => {
+        const card = e.target.closest('.service-card');
+        if (card) {
+            if (selectedService) {
+                selectedService.classList.remove('bg-primary', 'text-white');
+            }
+            selectedService = card;
+            card.classList.add('bg-primary', 'text-white');
+            updateTotal();
+        }
+    });
 
-    updateTotal(); // Initialize total on page load
+    quantity.addEventListener('input', updateTotal);
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!selectedService) {
+            alert('Please select a service');
+            return;
+        }
         const formData = new FormData(form);
-        formData.append('service_type', serviceType.value);
+        formData.append('service_type', selectedService.dataset.service);
         formData.append('quantity', quantity.value);
         formData.append('total', total.value);
 
