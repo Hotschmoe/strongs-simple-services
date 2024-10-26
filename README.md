@@ -24,14 +24,14 @@ Users should be able to 1. scan qr code. 2. login if not already logged in. 3. s
   - [x] Standard and rush options
   <!-- - [ ] Subscription status display -->
 - [ ] Admin functionality
-  - [ ] Database viewing and editing (viewing works, edit button visible but not functional)
+  - [x] Database viewing and editing (viewing works, editing functional)
+  - [ ] Implement form-based interface for easier database editing
   <!-- - [ ] Stripe health monitoring -->
   <!-- - [ ] Settings page -->
 - [x] QR code generation page
 - [x] Mobile-first design
 <!-- - [ ] Stripe activation check and error handling -->
 - [ ] add a field on ADMIN order page to select user to place an order for
-- [ ] edit functions on dashboard do not work
 - [ ] at some point we'll want to incorporate stripe for online payments
 - [x] when we feel good, we'll make a config file so any service provider can use this by entering their business name, description and a json of services that will populate the ordering field
 - [x] Integrate ngrok for easy public access
