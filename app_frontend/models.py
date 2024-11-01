@@ -40,6 +40,19 @@ class User(db.Model):
             return 0
         return max(0, self.services_allowed - self.services_used)
 
+    def cancel_subscription(self):
+        """
+        Cancels the user's subscription and updates relevant fields
+        """
+        self.subscription_status = 'canceled'
+        self.subscription_end_date = datetime.utcnow()
+        
+    def can_cancel_subscription(self):
+        """
+        Checks if the user can cancel their subscription
+        """
+        return self.has_active_subscription() and self.subscription_status not in ['canceled', 'pending_cancellation']
+
 class Order(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

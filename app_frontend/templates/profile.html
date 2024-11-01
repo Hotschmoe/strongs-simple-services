@@ -12,19 +12,32 @@
             <h3 class="card-title">Subscription Status</h3>
             
             {% if user.has_active_subscription() %}
-                <p class="card-text">Plan: {{ user.subscription_type }}</p>
-                <p class="card-text">Status: {{ user.subscription_status }}</p>
-                <p class="card-text">Services remaining: {{ user.get_remaining_services() }}</p>
-                <p class="card-text">Expires: {{ user.subscription_end_date.strftime('%Y-%m-%d') }}</p>
+                <div class="alert alert-success">
+                    <p class="mb-1"><strong>Active Subscription</strong></p>
+                    <p class="mb-1">Plan: {{ user.subscription_type }}</p>
+                    <p class="mb-1">Status: {{ user.subscription_status }}</p>
+                    <p class="mb-1">Services Used: {{ user.services_used }} / {{ user.services_allowed }}</p>
+                    <p class="mb-1">Start Date: {{ user.subscription_start_date.strftime('%Y-%m-%d') }}</p>
+                    <p class="mb-0">Expires: {{ user.subscription_end_date.strftime('%Y-%m-%d') }}</p>
+                </div>
                 
-                <form method="POST" action="{{ url_for('cancel_subscription') }}" 
-                      onsubmit="return confirm('Are you sure you want to cancel your subscription?');">
-                    <button type="submit" class="btn btn-danger">Cancel Subscription</button>
-                </form>
+                {% if user.has_active_subscription() and user.can_cancel_subscription() %}
+                    <form method="POST" action="{{ url_for('cancel_subscription') }}" 
+                          onsubmit="return confirm('Are you sure you want to cancel your subscription? This action cannot be undone.');"
+                          class="mt-3">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-times-circle"></i> Cancel Subscription
+                        </button>
+                    </form>
+                {% endif %}
             {% else %}
-                <p class="card-text">You currently don't have an active subscription.</p>
+                <div class="alert alert-info">
+                    <p class="mb-0">You currently don't have an active subscription.</p>
+                </div>
                 <a href="{{ url_for('order_service', plan='subscription') }}" 
-                   class="btn btn-primary">Sign Up for a Subscription</a>
+                   class="btn btn-primary">
+                    <i class="fas fa-shopping-cart"></i> Sign Up for a Subscription
+                </a>
             {% endif %}
         </div>
     </div>

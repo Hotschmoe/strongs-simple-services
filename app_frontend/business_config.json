@@ -5,6 +5,7 @@
     "paymentSettings": {
         "acceptCash": true,
         "acceptCard": true,
+        "stripeEnabled": true,
         "currency": "usd"
     },
     "services": {
@@ -24,8 +25,8 @@
         ],
         "subscription": [
             {
-                "id": "monthly-plan",
-                "name": "Monthly Wash Plan",
+                "id": "standard-plan",
+                "name": "Standard Wash Plan",
                 "description": "4 washes per month",
                 "price": 80,
                 "billingFrequency": "monthly",

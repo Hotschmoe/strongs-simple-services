@@ -74,12 +74,13 @@ def order_service():
         return redirect(url_for('login'))
     
     selected_plan = request.args.get('plan', 'oneTime')
-    stripe_public_key = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+    stripe_public_key = None
     
-    if not stripe_public_key:
-        app.logger.error("Stripe public key not found in environment variables")
-        flash('Payment service is currently unavailable', 'error')
-        return redirect(url_for('index'))
+    if business_config['paymentSettings'].get('stripeEnabled', False):
+        stripe_public_key = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+        if not stripe_public_key:
+            app.logger.error("Stripe public key not found in environment variables")
+            flash('Card payment service is currently unavailable', 'error')
 
     return render_template('order_service.html', 
                          business_config=business_config,
@@ -693,6 +694,79 @@ def mark_order_paid(order_id):
     db.session.commit()
     
     return jsonify({'success': True})
+
+@app.route('/cancel-subscription', methods=['POST'])
+def cancel_subscription():
+    if not g.user:
+        flash('Please log in to manage your subscription.', 'warning')
+        return redirect(url_for('login'))
+    
+    try:
+        # Check if user has an active subscription
+        if not g.user.has_active_subscription():
+            flash('No active subscription found.', 'warning')
+            return redirect(url_for('profile'))
+
+        # If using Stripe, cancel the subscription in Stripe
+        if g.user.stripe_customer_id and business_config['paymentSettings'].get('stripeEnabled', False):
+            stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+            
+            try:
+                # Fetch customer's subscriptions
+                subscriptions = stripe.Subscription.list(
+                    customer=g.user.stripe_customer_id,
+                    status='active',
+                    limit=1
+                )
+                
+                # Cancel the subscription in Stripe if it exists
+                if subscriptions.data:
+                    stripe.Subscription.modify(
+                        subscriptions.data[0].id,
+                        cancel_at_period_end=True
+                    )
+            except stripe.error.StripeError as e:
+                app.logger.error(f"Stripe subscription cancellation failed: {str(e)}")
+                flash('Failed to cancel subscription with payment provider.', 'danger')
+                return redirect(url_for('profile'))
+
+        # Update user's subscription status in database
+        g.user.subscription_status = 'canceled'
+        g.user.subscription_end_date = datetime.utcnow()  # Immediate cancellation
+        # Alternative: Let subscription run until the end of current period
+        # g.user.subscription_status = 'pending_cancellation'
+        
+        # Create a cancellation record in orders
+        cancellation_order = Order(
+            id=str(uuid.uuid4()),
+            user_id=g.user.id,
+            service_type=g.user.subscription_type,
+            quantity=0,
+            total=0,
+            status='Completed',
+            payment_status='not_applicable',
+            payment_method='none',
+            is_subscription_order=True
+        )
+        
+        db.session.add(cancellation_order)
+        db.session.commit()
+
+        # Send cancellation confirmation email (if implemented)
+        try:
+            # Implement email sending logic here
+            pass
+        except Exception as e:
+            app.logger.error(f"Failed to send cancellation email: {str(e)}")
+
+        flash('Your subscription has been successfully canceled.', 'success')
+        return redirect(url_for('profile'))
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Subscription cancellation failed: {str(e)}")
+        flash('An error occurred while canceling your subscription. Please try again or contact support.', 'danger')
+        return redirect(url_for('profile'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
