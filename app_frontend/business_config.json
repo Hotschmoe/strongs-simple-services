@@ -5,16 +5,24 @@
     "services": {
         "oneTime": [
             {
-                "name": "Rush Job",
-                "description": "Stanard Load, within 48 hours.",
-                "price": 222
+                "name": "Standard Loads",
+                "description": "Pickup, Wash, Fold.",
+                "price": 25
             },
             {
-                "name": "asd",
-                "description": "asd",
-                "price": 22
+                "name": "Rush Loads",
+                "description": "Pickup, Wash, Fold. in 48 hours",
+                "price": 35
             }
         ],
-        "subscription": []
+        "subscription": [
+            {
+                "name": "Monthly Wash Plan",
+                "description": "4 washes per month",
+                "price": 80,
+                "billingFrequency": "monthly",
+                "servicesPerPeriod": 4
+            }
+        ]
     }
 }
