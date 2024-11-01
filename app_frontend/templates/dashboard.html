@@ -30,10 +30,6 @@
                             <th>Address</th>
                             <th>Admin</th>
                             <th>Active</th>
-                            <th>Subscriber</th>
-                            <th>Sub. End Date</th>
-                            <th>Created At</th>
-                            <th>Updated At</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -47,10 +43,6 @@
                             <td>{{ user.address }}</td>
                             <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
                             <td>{{ 'Yes' if user.is_active else 'No' }}</td>
-                            <td>{{ 'Yes' if user.is_subscriber else 'No' }}</td>
-                            <td>{{ user.subscription_end_date.strftime('%Y-%m-%d') if user.subscription_end_date else 'N/A' }}</td>
-                            <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                            <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>
                                 <a href="#" class="btn btn-sm btn-primary edit-user" data-user-id="{{ user.id }}">Edit</a>
                             </td>
@@ -62,7 +54,7 @@
         </div>
     </div>
 
-    <h2 class="mb-3">Orders</h2>
+    <h2 class="mb-3">Active Orders</h2>
     <div class="card mb-4">
         <div class="card-body">
             <div class="table-responsive">
@@ -77,18 +69,13 @@
                             <th>Status</th>
                             <th>Payment Status</th>
                             <th>Payment Method</th>
-                            <th>Subscription</th>
-                            <th>Sub. Period</th>
-                            <th>Sub. Start</th>
-                            <th>Sub. End</th>
-                            <th>Services/Period</th>
                             <th>Created At</th>
                             <th>Updated At</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for order in orders %}
+                        {% for order in active_orders %}
                         <tr>
                             <td>{{ order.id }}</td>
                             <td>{{ order.user.name }}</td>
@@ -96,42 +83,129 @@
                             <td>{{ order.quantity }}</td>
                             <td>{{ order.total }}</td>
                             <td>{{ order.status }}</td>
-                            <td>
-                                {% if order.payment_status == 'paid' %}
-                                    <span class="badge bg-success">Paid</span>
-                                {% elif order.payment_status == 'pending' %}
-                                    <span class="badge bg-warning">Pending</span>
-                                    {% if order.payment_method == 'cash' %}
-                                        <button class="btn btn-sm btn-success ms-2 mark-paid" 
-                                                data-order-id="{{ order.id }}">
-                                            Mark Paid
-                                        </button>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="badge bg-danger">Unpaid</span>
-                                    {% if order.payment_method == 'cash' %}
-                                        <button class="btn btn-sm btn-success ms-2 mark-paid" 
-                                                data-order-id="{{ order.id }}">
-                                            Mark Paid
-                                        </button>
-                                    {% endif %}
-                                {% endif %}
-                            </td>
-                            <td>{{ order.payment_method|title if order.payment_method else 'N/A' }}</td>
-                            <td>{{ 'Yes' if order.is_subscription else 'No' }}</td>
-                            <td>{{ order.subscription_period or 'N/A' }}</td>
-                            <td>{{ order.subscription_start_date.strftime('%Y-%m-%d') if order.subscription_start_date else 'N/A' }}</td>
-                            <td>{{ order.subscription_end_date.strftime('%Y-%m-%d') if order.subscription_end_date else 'N/A' }}</td>
-                            <td>{{ order.services_per_period or 'N/A' }}</td>
+                            <td>{{ order.payment_status }}</td>
+                            <td>{{ order.payment_method }}</td>
                             <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>
                                 <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
-                                {% if order.status != 'Completed' %}
-                                <button class="btn btn-sm btn-success complete-order" data-order-id="{{ order.id }}">Mark Complete</button>
-                                {% endif %}
-                                <button class="btn btn-sm btn-secondary print-receipt" data-order-id="{{ order.id }}">Print Receipt</button>
                             </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="mb-3">Completed Orders</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Service Type</th>
+                            <th>Quantity (kg)</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Payment Status</th>
+                            <th>Payment Method</th>
+                            <th>Created At</th>
+                            <th>Updated At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in completed_orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.user.name }}</td>
+                            <td>{{ order.service_type }}</td>
+                            <td>{{ order.quantity }}</td>
+                            <td>{{ order.total }}</td>
+                            <td>{{ order.status }}</td>
+                            <td>{{ order.payment_status }}</td>
+                            <td>{{ order.payment_method }}</td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="mb-3">Active Subscriptions</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Subscription ID</th>
+                            <th>Status</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Services Allowed</th>
+                            <th>Services Used</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subscription in active_subscriptions %}
+                        <tr>
+                            <td>{{ subscription.user.name }}</td>
+                            <td>{{ subscription.subscription_id }}</td>
+                            <td>{{ subscription.status }}</td>
+                            <td>{{ subscription.start_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ subscription.end_date.strftime('%Y-%m-%d') if subscription.end_date else 'N/A' }}</td>
+                            <td>{{ subscription.services_allowed }}</td>
+                            <td>{{ subscription.services_used }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="cancelSubscription('{{ subscription.id }}')">Cancel</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="mb-3">Canceled Subscriptions</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Subscription ID</th>
+                            <th>Status</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Services Allowed</th>
+                            <th>Services Used</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subscription in canceled_subscriptions %}
+                        <tr>
+                            <td>{{ subscription.user.name }}</td>
+                            <td>{{ subscription.subscription_id }}</td>
+                            <td>{{ subscription.status }}</td>
+                            <td>{{ subscription.start_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ subscription.end_date.strftime('%Y-%m-%d') if subscription.end_date else 'N/A' }}</td>
+                            <td>{{ subscription.services_allowed }}</td>
+                            <td>{{ subscription.services_used }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -296,50 +370,6 @@
                     <button type="button" class="btn btn-primary" id="saveOrderButton">Save Changes</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Subscriptions Section -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3>Subscriptions</h3>
-        </div>
-        <div class="card-body">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Plan</th>
-                        <th>Status</th>
-                        <th>Services Used</th>
-                        <th>Services Allowed</th>
-                        <th>Expiry Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users if user.subscription_status != 'none' %}
-                    <tr>
-                        <td>{{ user.name }}</td>
-                        <td>{{ user.subscription_type }}</td>
-                        <td>{{ user.subscription_status }}</td>
-                        <td>{{ user.services_used }}</td>
-                        <td>{{ user.services_allowed }}</td>
-                        <td>{{ user.subscription_end_date.strftime('%Y-%m-%d') if user.subscription_end_date else 'N/A' }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" 
-                                    onclick="cancelSubscription('{{ user.id }}')">
-                                Cancel
-                            </button>
-                            <button class="btn btn-sm btn-primary" 
-                                    onclick="resetUsage('{{ user.id }}')">
-                                Reset Usage
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
 </div>

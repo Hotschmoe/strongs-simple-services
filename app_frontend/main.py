@@ -121,8 +121,18 @@ def dashboard():
         return redirect(url_for('index'))
     
     users = User.query.all()
-    orders = Order.query.join(User).all()
-    return render_template('dashboard.html', users=users, orders=orders, business_config=business_config)
+    active_orders = Order.query.filter(Order.status != 'Completed').join(User).all()
+    completed_orders = Order.query.filter(Order.status == 'Completed').join(User).all()
+    active_subscriptions = Subscription.query.filter(Subscription.status == 'active').join(User).all()
+    canceled_subscriptions = Subscription.query.filter(Subscription.status == 'canceled').join(User).all()
+
+    return render_template('dashboard.html', 
+                           users=users, 
+                           active_orders=active_orders, 
+                           completed_orders=completed_orders,
+                           active_subscriptions=active_subscriptions,
+                           canceled_subscriptions=canceled_subscriptions,
+                           business_config=business_config)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

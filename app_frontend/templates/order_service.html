@@ -121,6 +121,13 @@
                 <p><strong id="paymentStatus"></strong></p>
                 <button id="printReceipt" class="btn btn-secondary">Print Receipt</button>
             </div>
+
+            <div id="loadingSpinner" class="text-center" style="display: none;">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">1</span>
+                </div>
+                <p>Please wait while we process your order...</p>
+            </div>
         </div>
     </div>
 </div>
@@ -146,6 +153,9 @@
             alert('Please select a service and payment method');
             return;
         }
+
+        // Show the loading spinner
+        document.getElementById('loadingSpinner').style.display = 'block';
 
         const serviceType = selectedService.dataset.type;
         const serviceId = selectedService.dataset.service;
@@ -207,6 +217,9 @@
                 orderId = response.orderId;
             }
 
+            // Hide the loading spinner
+            document.getElementById('loadingSpinner').style.display = 'none';
+
             // Display confirmation
             document.getElementById('orderId').textContent = orderId;
             document.getElementById('paymentStatus').textContent = 
@@ -217,6 +230,8 @@
             document.getElementById('orderForm').style.display = 'none';
 
         } catch (error) {
+            // Hide the loading spinner in case of error
+            document.getElementById('loadingSpinner').style.display = 'none';
             alert(error.message || 'Failed to process order');
         }
     });
