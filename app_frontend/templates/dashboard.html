@@ -9,7 +9,7 @@
     <div class="row mb-4">
         <div class="col">
             <div class="d-flex gap-2">
-                <a href="{{ url_for('business_config_page') }}" class="btn btn-primary">
+                <a href="{{ url_for('business_config_page') }}" class="btn btn-primary action-button">
                     Edit Business Configuration
                 </a>
             </div>
@@ -44,7 +44,7 @@
                             <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
                             <td>{{ 'Yes' if user.is_active else 'No' }}</td>
                             <td>
-                                <a href="#" class="btn btn-sm btn-primary edit-user" data-user-id="{{ user.id }}">Edit</a>
+                                <a href="#" class="btn btn-sm btn-primary edit-user action-button" data-user-id="{{ user.id }}">Edit</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -88,7 +88,12 @@
                             <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>
-                                <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
+                                {% if order.payment_status != 'paid' %}
+                                <button class="btn btn-sm btn-success mark-paid action-button" data-order-id="{{ order.id }}">Mark as Paid</button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-primary mark-completed action-button" data-order-id="{{ order.id }}">Mark as Completed</button>
+                                <a href="#" class="btn btn-sm btn-secondary edit-order action-button" data-order-id="{{ order.id }}">Edit</a>
+                                <button class="btn btn-sm btn-outline-secondary print-receipt action-button" data-order-id="{{ order.id }}">Print Receipt</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -101,7 +106,7 @@
     <h2 class="mb-3">Completed Orders</h2>
     <div class="card mb-4">
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                 <table class="table">
                     <thead>
                         <tr>
@@ -119,7 +124,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for order in completed_orders %}
+                        {% for order in completed_orders[:15] %}
                         <tr>
                             <td>{{ order.id }}</td>
                             <td>{{ order.user.name }}</td>
@@ -132,7 +137,8 @@
                             <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>
-                                <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
+                                <a href="#" class="btn btn-sm btn-primary edit-order action-button" data-order-id="{{ order.id }}">Edit</a>
+                                <button class="btn btn-sm btn-outline-secondary print-receipt action-button" data-order-id="{{ order.id }}">Print Receipt</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -170,7 +176,7 @@
                             <td>{{ subscription.services_allowed }}</td>
                             <td>{{ subscription.services_used }}</td>
                             <td>
-                                <button class="btn btn-sm btn-danger" onclick="cancelSubscription('{{ subscription.id }}')">Cancel</button>
+                                <button class="btn btn-sm btn-danger action-button" onclick="cancelSubscription('{{ subscription.id }}')">Cancel</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -217,8 +223,8 @@
     <h2 class="mb-3">Database Management</h2>
     <div class="card">
         <div class="card-body">
-            <button id="backupButton" class="btn btn-primary me-2">Backup Database</button>
-            <button id="backupDownloadButton" class="btn btn-success me-2">Backup & Download Database</button>
+            <button id="backupButton" class="btn btn-primary me-2 action-button">Backup Database</button>
+            <button id="backupDownloadButton" class="btn btn-success me-2 action-button">Backup & Download Database</button>
 
             <hr class="my-3">
             <div class="alert alert-warning">
@@ -226,7 +232,7 @@
             </div>
             <form id="restoreForm" class="d-flex align-items-center">
                 <input type="file" id="backupFile" accept=".sqlite" class="form-control me-2" required>
-                <button type="submit" class="btn btn-warning">Restore Backup</button>
+                <button type="submit" class="btn btn-warning action-button">Restore Backup</button>
             </form>
         </div>
     </div>
@@ -674,7 +680,7 @@
         }
     });
 
-    // Add this to the extra_scripts block
+    // Mark order as paid
     document.querySelectorAll('.mark-paid').forEach(button => {
         button.addEventListener('click', async (e) => {
             const orderId = e.target.dataset.orderId;
@@ -683,23 +689,53 @@
             }
 
             try {
-                const response = await fetch(`/api/order/${orderId}/mark-paid`, {
-                    method: 'POST',
+                const response = await fetch(`/api/order/${orderId}`, {
+                    method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({ payment_status: 'paid' })
                 });
                 
                 if (response.ok) {
-                    // Update the UI
-                    const cell = e.target.closest('td');
-                    cell.innerHTML = '<span class="badge bg-success">Paid</span>';
+                    // Force a page reload
+                    window.location.reload();
                 } else {
                     throw new Error('Failed to mark order as paid');
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to mark order as paid');
+            }
+        });
+    });
+
+    // Mark order as completed
+    document.querySelectorAll('.mark-completed').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            const orderId = e.target.dataset.orderId;
+            if (!confirm('Are you sure you want to mark this order as completed?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/order/${orderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: 'Completed' })
+                });
+                
+                if (response.ok) {
+                    // Force a page reload
+                    window.location.reload();
+                } else {
+                    throw new Error('Failed to mark order as completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to mark order as completed');
             }
         });
     });

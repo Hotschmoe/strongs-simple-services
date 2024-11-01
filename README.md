@@ -77,6 +77,9 @@ This approach provides:
 - [ ] Automatic subscription renewal
 - [ ] Subscription cancellation handling
 
+### Refunds
+Refunds must be processed directly through the Stripe dashboard. This application does not support initiating refunds through the web interface. For more information on processing refunds, please refer to the [Stripe documentation](https://stripe.com/docs/refunds).
+
 ## Setup
 
 ### Prerequisites
