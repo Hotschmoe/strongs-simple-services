@@ -227,10 +227,15 @@ def complete_order(order_id):
 
 @app.route('/api/order/<order_id>/receipt', methods=['GET'])
 def get_receipt(order_id):
-    if not g.user or not g.user.is_admin:
-        return jsonify({'error': 'Unauthorized'}), 403
+    if not g.user:
+        return jsonify({'error': 'Unauthorized'}), 401
     
     order = Order.query.get_or_404(order_id)
+    
+    # Allow access if user is admin or if the order belongs to the user
+    if not g.user.is_admin and order.user_id != g.user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
     receipt_data = {
         'order_id': order.id,
         'customer': order.user.name,
