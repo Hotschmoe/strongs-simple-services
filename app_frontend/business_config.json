@@ -13,12 +13,20 @@
             {
                 "name": "Standard Loads",
                 "description": "Pickup, Wash, Fold.",
-                "price": 25
+                "price": 25,
+                "id": "standard-loads"
             },
             {
                 "name": "Rush Loads",
                 "description": "Pickup, Wash, Fold. in 48 hours",
-                "price": 35
+                "price": 35,
+                "id": "rush-loads"
+            },
+            {
+                "name": "Faster Laod",
+                "description": "asd",
+                "price": 22,
+                "id": "faster-laod"
             }
         ],
         "subscription": [
@@ -27,14 +35,16 @@
                 "description": "4 washes per month",
                 "price": 80,
                 "billingFrequency": "monthly",
-                "servicesPerPeriod": 4
+                "servicesPerPeriod": 4,
+                "id": "standard-wash-plan"
             },
             {
                 "name": "Large Wash Plan",
                 "description": "6 washes per month",
                 "price": 90,
                 "billingFrequency": "monthly",
-                "servicesPerPeriod": 6
+                "servicesPerPeriod": 6,
+                "id": "large-wash-plan"
             }
         ]
     }

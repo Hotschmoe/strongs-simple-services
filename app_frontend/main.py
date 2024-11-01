@@ -436,8 +436,8 @@ def update_business_config():
     try:
         new_config = request.json
         config_path = os.environ.get('BUSINESS_CONFIG_PATH', '/app/business_config.json')
-        backup_path = f"{config_path}.backup"  # Single backup file
-        
+        backup_path = f"{config_path}.backup"
+
         # Enhanced validation
         if not new_config:
             return jsonify({'success': False, 'message': 'No data provided'}), 400
@@ -451,7 +451,11 @@ def update_business_config():
                 'message': f'Missing required fields: {", ".join(missing_fields)}'
             }), 400
 
-        # Validate services structure and data
+        # Helper function to generate ID from name
+        def generate_id(name):
+            return name.lower().replace(' ', '-')
+
+        # Process services and add IDs
         services = new_config.get('services', {})
         if not isinstance(services, dict):
             return jsonify({'success': False, 'message': 'Services must be an object'}), 400
@@ -463,8 +467,8 @@ def update_business_config():
             if not isinstance(services[service_type], list):
                 return jsonify({'success': False, 'message': f'{service_type} services must be an array'}), 400
 
-            # Validate each service
-            for idx, service in enumerate(services[service_type]):
+            # Process each service
+            for service in services[service_type]:
                 required_service_fields = ['name', 'description', 'price']
                 if service_type == 'subscription':
                     required_service_fields.extend(['billingFrequency', 'servicesPerPeriod'])
@@ -473,10 +477,14 @@ def update_business_config():
                 if missing_service_fields:
                     return jsonify({
                         'success': False,
-                        'message': f'Service #{idx + 1} missing fields: {", ".join(missing_service_fields)}'
+                        'message': f'Service missing fields: {", ".join(missing_service_fields)}'
                     }), 400
 
-        # Create/update backup of current config (only if it exists)
+                # Generate and add ID if not present
+                if 'id' not in service:
+                    service['id'] = generate_id(service['name'])
+
+        # Create/update backup of current config
         if os.path.exists(config_path):
             try:
                 shutil.copy2(config_path, backup_path)
@@ -492,11 +500,6 @@ def update_business_config():
             global business_config
             business_config = new_config
 
-            # If save was successful and backup exists, we could optionally remove it
-            # Uncomment the following lines if you want to remove the backup after successful update
-            # if os.path.exists(backup_path):
-            #     os.remove(backup_path)
-            
             return jsonify({
                 'success': True, 
                 'message': 'Configuration updated successfully'
