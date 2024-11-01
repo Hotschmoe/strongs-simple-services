@@ -11,13 +11,11 @@
     "services": {
         "oneTime": [
             {
-                "id": "standard-load",
                 "name": "Standard Loads",
                 "description": "Pickup, Wash, Fold.",
                 "price": 25
             },
             {
-                "id": "rush-load",
                 "name": "Rush Loads",
                 "description": "Pickup, Wash, Fold. in 48 hours",
                 "price": 35
@@ -25,7 +23,6 @@
         ],
         "subscription": [
             {
-                "id": "standard-plan",
                 "name": "Standard Wash Plan",
                 "description": "4 washes per month",
                 "price": 80,
@@ -33,7 +30,6 @@
                 "servicesPerPeriod": 4
             },
             {
-                "id": "large-plan",
                 "name": "Large Wash Plan",
                 "description": "6 washes per month",
                 "price": 90,

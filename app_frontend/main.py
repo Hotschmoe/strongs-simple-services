@@ -773,5 +773,18 @@ def cancel_subscription():
         flash('An error occurred while canceling your subscription. Please try again or contact support.', 'danger')
         return redirect(url_for('profile'))
 
+@app.route('/business-config')
+def business_config_page():
+    # Redirect if not logged in
+    if not g.user:
+        return redirect(url_for('login'))
+    
+    # Redirect if not admin
+    if not g.user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('index'))
+    
+    return render_template('business_config.html', business_config=business_config)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

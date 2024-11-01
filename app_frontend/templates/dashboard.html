@@ -3,215 +3,143 @@
 {% block title %}Admin Dashboard - {{ business_config['businessName'] }}{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Admin Dashboard</h1>
+<div class="container">
+    <h1 class="mb-4">Admin Dashboard</h1>
 
-<h2 class="mb-3">Users</h2>
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Address</th>
-                        <th>Admin</th>
-                        <th>Active</th>
-                        <th>Subscriber</th>
-                        <th>Sub. End Date</th>
-                        <th>Created At</th>
-                        <th>Updated At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.id }}</td>
-                        <td>{{ user.name }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.phone }}</td>
-                        <td>{{ user.address }}</td>
-                        <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
-                        <td>{{ 'Yes' if user.is_active else 'No' }}</td>
-                        <td>{{ 'Yes' if user.is_subscriber else 'No' }}</td>
-                        <td>{{ user.subscription_end_date.strftime('%Y-%m-%d') if user.subscription_end_date else 'N/A' }}</td>
-                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                        <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                        <td>
-                            <a href="#" class="btn btn-sm btn-primary edit-user" data-user-id="{{ user.id }}">Edit</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('business_config_page') }}" class="btn btn-primary">
+                    Edit Business Configuration
+                </a>
+            </div>
         </div>
     </div>
-</div>
 
-<h2 class="mb-3">Orders</h2>
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Customer</th>
-                        <th>Service Type</th>
-                        <th>Quantity (kg)</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Payment Status</th>
-                        <th>Payment Method</th>
-                        <th>Subscription</th>
-                        <th>Sub. Period</th>
-                        <th>Sub. Start</th>
-                        <th>Sub. End</th>
-                        <th>Services/Period</th>
-                        <th>Created At</th>
-                        <th>Updated At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                    <tr>
-                        <td>{{ order.id }}</td>
-                        <td>{{ order.user.name }}</td>
-                        <td>{{ order.service_type }}</td>
-                        <td>{{ order.quantity }}</td>
-                        <td>{{ order.total }}</td>
-                        <td>{{ order.status }}</td>
-                        <td>
-                            {% if order.payment_status == 'paid' %}
-                                <span class="badge bg-success">Paid</span>
-                            {% elif order.payment_status == 'pending' %}
-                                <span class="badge bg-warning">Pending</span>
-                                {% if order.payment_method == 'cash' %}
-                                    <button class="btn btn-sm btn-success ms-2 mark-paid" 
-                                            data-order-id="{{ order.id }}">
-                                        Mark Paid
-                                    </button>
-                                {% endif %}
-                            {% else %}
-                                <span class="badge bg-danger">Unpaid</span>
-                                {% if order.payment_method == 'cash' %}
-                                    <button class="btn btn-sm btn-success ms-2 mark-paid" 
-                                            data-order-id="{{ order.id }}">
-                                        Mark Paid
-                                    </button>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                        <td>{{ order.payment_method|title if order.payment_method else 'N/A' }}</td>
-                        <td>{{ 'Yes' if order.is_subscription else 'No' }}</td>
-                        <td>{{ order.subscription_period or 'N/A' }}</td>
-                        <td>{{ order.subscription_start_date.strftime('%Y-%m-%d') if order.subscription_start_date else 'N/A' }}</td>
-                        <td>{{ order.subscription_end_date.strftime('%Y-%m-%d') if order.subscription_end_date else 'N/A' }}</td>
-                        <td>{{ order.services_per_period or 'N/A' }}</td>
-                        <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                        <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                        <td>
-                            <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
-                            {% if order.status != 'Completed' %}
-                            <button class="btn btn-sm btn-success complete-order" data-order-id="{{ order.id }}">Mark Complete</button>
-                            {% endif %}
-                            <button class="btn btn-sm btn-secondary print-receipt" data-order-id="{{ order.id }}">Print Receipt</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div class="mt-4">
-    <h2 class="mb-3">Business Configuration</h2>
+    <h2 class="mb-3">Users</h2>
     <div class="card mb-4">
         <div class="card-body">
-            <form id="businessConfigForm" onsubmit="return false;">
-                <div class="mb-3">
-                    <label class="form-label">Business Name</label>
-                    <input type="text" class="form-control" name="businessName" value="{{ business_config['businessName'] }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Business Description</label>
-                    <textarea class="form-control" name="businessDescription" rows="2">{{ business_config['businessDescription'] }}</textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">About</label>
-                    <textarea class="form-control" name="about" rows="3">{{ business_config['about'] }}</textarea>
-                </div>
-
-                <h4 class="mt-4">One-Time Services</h4>
-                <div id="oneTimeServices">
-                    {% for service in business_config['services']['oneTime'] %}
-                    <div class="service-item card mb-3 p-3">
-                        <div class="mb-2">
-                            <label class="form-label">Service Name</label>
-                            <input type="text" class="form-control" name="oneTime[{{ loop.index0 }}][name]" value="{{ service['name'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Description</label>
-                            <input type="text" class="form-control" name="oneTime[{{ loop.index0 }}][description]" value="{{ service['description'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Price</label>
-                            <input type="number" class="form-control" name="oneTime[{{ loop.index0 }}][price]" value="{{ service['price'] }}">
-                        </div>
-                        <button type="button" class="btn btn-danger btn-sm mt-2 remove-service" style="width: fit-content;">Remove Service</button>
-                    </div>
-                    {% endfor %}
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm mb-4" id="addOneTimeService">Add One-Time Service</button>
-
-                <h4 class="mt-4">Subscription Services</h4>
-                <div id="subscriptionServices">
-                    {% for service in business_config['services']['subscription'] %}
-                    <div class="service-item card mb-3 p-3">
-                        <div class="mb-2">
-                            <label class="form-label">Service Name</label>
-                            <input type="text" class="form-control" name="subscription[{{ loop.index0 }}][name]" value="{{ service['name'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Description</label>
-                            <input type="text" class="form-control" name="subscription[{{ loop.index0 }}][description]" value="{{ service['description'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Price</label>
-                            <input type="number" class="form-control" name="subscription[{{ loop.index0 }}][price]" value="{{ service['price'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Billing Frequency</label>
-                            <select class="form-control" name="subscription[{{ loop.index0 }}][billingFrequency]">
-                                <option value="weekly" {% if service['billingFrequency'] == 'weekly' %}selected{% endif %}>Weekly</option>
-                                <option value="monthly" {% if service['billingFrequency'] == 'monthly' %}selected{% endif %}>Monthly</option>
-                                <option value="yearly" {% if service['billingFrequency'] == 'yearly' %}selected{% endif %}>Yearly</option>
-                            </select>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Services Per Period</label>
-                            <input type="number" class="form-control" name="subscription[{{ loop.index0 }}][servicesPerPeriod]" value="{{ service['servicesPerPeriod'] }}">
-                        </div>
-                        <button type="button" class="btn btn-danger btn-sm mt-2 remove-service" style="width: fit-content;">Remove Service</button>
-                    </div>
-                    {% endfor %}
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm mb-4" id="addSubscriptionService">Add Subscription Service</button>
-
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Save Configuration</button>
-                </div>
-            </form>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Admin</th>
+                            <th>Active</th>
+                            <th>Subscriber</th>
+                            <th>Sub. End Date</th>
+                            <th>Created At</th>
+                            <th>Updated At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td>{{ user.address }}</td>
+                            <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+                            <td>{{ 'Yes' if user.is_active else 'No' }}</td>
+                            <td>{{ 'Yes' if user.is_subscriber else 'No' }}</td>
+                            <td>{{ user.subscription_end_date.strftime('%Y-%m-%d') if user.subscription_end_date else 'N/A' }}</td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-primary edit-user" data-user-id="{{ user.id }}">Edit</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="mt-4">
+    <h2 class="mb-3">Orders</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Service Type</th>
+                            <th>Quantity (kg)</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Payment Status</th>
+                            <th>Payment Method</th>
+                            <th>Subscription</th>
+                            <th>Sub. Period</th>
+                            <th>Sub. Start</th>
+                            <th>Sub. End</th>
+                            <th>Services/Period</th>
+                            <th>Created At</th>
+                            <th>Updated At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.user.name }}</td>
+                            <td>{{ order.service_type }}</td>
+                            <td>{{ order.quantity }}</td>
+                            <td>{{ order.total }}</td>
+                            <td>{{ order.status }}</td>
+                            <td>
+                                {% if order.payment_status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% elif order.payment_status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% if order.payment_method == 'cash' %}
+                                        <button class="btn btn-sm btn-success ms-2 mark-paid" 
+                                                data-order-id="{{ order.id }}">
+                                            Mark Paid
+                                        </button>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-danger">Unpaid</span>
+                                    {% if order.payment_method == 'cash' %}
+                                        <button class="btn btn-sm btn-success ms-2 mark-paid" 
+                                                data-order-id="{{ order.id }}">
+                                            Mark Paid
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ order.payment_method|title if order.payment_method else 'N/A' }}</td>
+                            <td>{{ 'Yes' if order.is_subscription else 'No' }}</td>
+                            <td>{{ order.subscription_period or 'N/A' }}</td>
+                            <td>{{ order.subscription_start_date.strftime('%Y-%m-%d') if order.subscription_start_date else 'N/A' }}</td>
+                            <td>{{ order.subscription_end_date.strftime('%Y-%m-%d') if order.subscription_end_date else 'N/A' }}</td>
+                            <td>{{ order.services_per_period or 'N/A' }}</td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
+                                {% if order.status != 'Completed' %}
+                                <button class="btn btn-sm btn-success complete-order" data-order-id="{{ order.id }}">Mark Complete</button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-secondary print-receipt" data-order-id="{{ order.id }}">Print Receipt</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <h2 class="mb-3">Database Management</h2>
     <div class="card">
         <div class="card-body">
@@ -228,192 +156,191 @@
             </form>
         </div>
     </div>
-</div>
 
-<!-- Add these modal templates at the end of the content block -->
-<!-- User Edit Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Edit User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editUserForm">
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-control" name="name">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" name="email">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                        <input type="tel" class="form-control" name="phone">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Address</label>
-                        <input type="text" class="form-control" name="address">
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" name="is_admin">
-                            <label class="form-check-label">Admin</label>
+    <!-- User Edit Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" name="is_active">
-                            <label class="form-check-label">Active</label>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" name="is_subscriber">
-                            <label class="form-check-label">Subscriber</label>
+                        <div class="mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control" name="phone">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Subscription End Date</label>
-                        <input type="date" class="form-control" name="subscription_end_date">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveUserButton">Save Changes</button>
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <input type="text" class="form-control" name="address">
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_admin">
+                                <label class="form-check-label">Admin</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_active">
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_subscriber">
+                                <label class="form-check-label">Subscriber</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Subscription End Date</label>
+                            <input type="date" class="form-control" name="subscription_end_date">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveUserButton">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Order Edit Modal -->
-<div class="modal fade" id="editOrderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Edit Order</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editOrderForm">
-                    <div class="mb-3">
-                        <label class="form-label">Service Type</label>
-                        <input type="text" class="form-control" name="service_type">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Quantity (kg)</label>
-                        <input type="number" step="0.1" class="form-control" name="quantity">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Total</label>
-                        <input type="text" class="form-control" name="total">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select class="form-control" name="status">
-                            <option value="Pending">Pending</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" name="is_subscription">
-                            <label class="form-check-label">Subscription Order</label>
+    <!-- Order Edit Modal -->
+    <div class="modal fade" id="editOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editOrderForm">
+                        <div class="mb-3">
+                            <label class="form-label">Service Type</label>
+                            <input type="text" class="form-control" name="service_type">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Subscription Period</label>
-                        <select class="form-control" name="subscription_period">
-                            <option value="">None</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Subscription Start Date</label>
-                        <input type="date" class="form-control" name="subscription_start_date">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Subscription End Date</label>
-                        <input type="date" class="form-control" name="subscription_end_date">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Services Per Period</label>
-                        <input type="number" class="form-control" name="services_per_period">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Payment Status</label>
-                        <select class="form-control" name="payment_status">
-                            <option value="unpaid">Unpaid</option>
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Payment Method</label>
-                        <select class="form-control" name="payment_type">
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="transfer">Bank Transfer</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveOrderButton">Save Changes</button>
+                        <div class="mb-3">
+                            <label class="form-label">Quantity (kg)</label>
+                            <input type="number" step="0.1" class="form-control" name="quantity">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Total</label>
+                            <input type="text" class="form-control" name="total">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-control" name="status">
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_subscription">
+                                <label class="form-check-label">Subscription Order</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Subscription Period</label>
+                            <select class="form-control" name="subscription_period">
+                                <option value="">None</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Subscription Start Date</label>
+                            <input type="date" class="form-control" name="subscription_start_date">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Subscription End Date</label>
+                            <input type="date" class="form-control" name="subscription_end_date">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Services Per Period</label>
+                            <input type="number" class="form-control" name="services_per_period">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Payment Status</label>
+                            <select class="form-control" name="payment_status">
+                                <option value="unpaid">Unpaid</option>
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <select class="form-control" name="payment_type">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveOrderButton">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Add this section to the existing dashboard template -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h3>Subscriptions</h3>
-    </div>
-    <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Plan</th>
-                    <th>Status</th>
-                    <th>Services Used</th>
-                    <th>Services Allowed</th>
-                    <th>Expiry Date</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users if user.subscription_status != 'none' %}
-                <tr>
-                    <td>{{ user.name }}</td>
-                    <td>{{ user.subscription_type }}</td>
-                    <td>{{ user.subscription_status }}</td>
-                    <td>{{ user.services_used }}</td>
-                    <td>{{ user.services_allowed }}</td>
-                    <td>{{ user.subscription_end_date.strftime('%Y-%m-%d') if user.subscription_end_date else 'N/A' }}</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" 
-                                onclick="cancelSubscription('{{ user.id }}')">
-                            Cancel
-                        </button>
-                        <button class="btn btn-sm btn-primary" 
-                                onclick="resetUsage('{{ user.id }}')">
-                            Reset Usage
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Subscriptions Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Subscriptions</h3>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Plan</th>
+                        <th>Status</th>
+                        <th>Services Used</th>
+                        <th>Services Allowed</th>
+                        <th>Expiry Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users if user.subscription_status != 'none' %}
+                    <tr>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.subscription_type }}</td>
+                        <td>{{ user.subscription_status }}</td>
+                        <td>{{ user.services_used }}</td>
+                        <td>{{ user.services_allowed }}</td>
+                        <td>{{ user.subscription_end_date.strftime('%Y-%m-%d') if user.subscription_end_date else 'N/A' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" 
+                                    onclick="cancelSubscription('{{ user.id }}')">
+                                Cancel
+                            </button>
+                            <button class="btn btn-sm btn-primary" 
+                                    onclick="resetUsage('{{ user.id }}')">
+                                Reset Usage
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -759,257 +686,6 @@
             alert(error.message || 'Failed to restore backup');
         }
     });
-
-    // Replace the existing businessConfigForm handling with this improved version
-    const businessConfigForm = document.getElementById('businessConfigForm');
-    const submitButton = businessConfigForm.querySelector('button[type="submit"]');
-
-    submitButton.addEventListener('click', async (e) => {
-        e.preventDefault();
-        
-        // Show loading state
-        submitButton.disabled = true;
-        const originalButtonText = submitButton.textContent;
-        submitButton.textContent = 'Saving...';
-        
-        // Add loading overlay
-        const loadingOverlay = document.createElement('div');
-        loadingOverlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75';
-        loadingOverlay.style.zIndex = '9999';
-        loadingOverlay.innerHTML = `
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        `;
-        document.body.appendChild(loadingOverlay);
-        
-        try {
-            // Validate required fields
-            const requiredFields = ['businessName', 'businessDescription', 'about'];
-            for (const field of requiredFields) {
-                const input = businessConfigForm.elements[field];
-                if (!input.value.trim()) {
-                    throw new Error(`${field.replace(/([A-Z])/g, ' $1').toLowerCase()} is required`);
-                }
-            }
-
-            // Gather form data
-            const formData = {
-                businessName: businessConfigForm.elements.businessName.value.trim(),
-                businessDescription: businessConfigForm.elements.businessDescription.value.trim(),
-                about: businessConfigForm.elements.about.value.trim(),
-                services: {
-                    oneTime: [],
-                    subscription: []
-                }
-            };
-
-            // Gather one-time services
-            document.querySelectorAll('#oneTimeServices .service-item').forEach(item => {
-                const service = {
-                    name: item.querySelector('[name$="[name]"]').value.trim(),
-                    description: item.querySelector('[name$="[description]"]').value.trim(),
-                    price: parseFloat(item.querySelector('[name$="[price]"]').value)
-                };
-
-                // Validate service data
-                if (!service.name || !service.description || isNaN(service.price)) {
-                    throw new Error('All service fields are required');
-                }
-
-                formData.services.oneTime.push(service);
-            });
-
-            // Gather subscription services
-            document.querySelectorAll('#subscriptionServices .service-item').forEach(item => {
-                const service = {
-                    name: item.querySelector('[name$="[name]"]').value.trim(),
-                    description: item.querySelector('[name$="[description]"]').value.trim(),
-                    price: parseFloat(item.querySelector('[name$="[price]"]').value),
-                    billingFrequency: item.querySelector('[name$="[billingFrequency]"]').value,
-                    servicesPerPeriod: parseInt(item.querySelector('[name$="[servicesPerPeriod]"]').value)
-                };
-
-                // Validate service data
-                if (!service.name || !service.description || isNaN(service.price) || 
-                    !service.billingFrequency || isNaN(service.servicesPerPeriod)) {
-                    throw new Error('All service fields are required');
-                }
-
-                formData.services.subscription.push(service);
-            });
-
-            const response = await fetch('/api/update-business-config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-                // Show success message using Bootstrap's toast
-                const toastElement = document.createElement('div');
-                toastElement.className = 'toast position-fixed top-0 end-0 m-3';
-                toastElement.innerHTML = `
-                    <div class="toast-header bg-success text-white">
-                        <strong class="me-auto">Success</strong>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-                    </div>
-                    <div class="toast-body">
-                        Business configuration updated successfully!
-                    </div>
-                `;
-                document.body.appendChild(toastElement);
-                
-                // Initialize and show the toast
-                const toast = new bootstrap.Toast(toastElement);
-                toast.show();
-                
-                // Reload page after short delay
-                setTimeout(() => window.location.reload(), 1500);
-            } else {
-                throw new Error(result.message || 'Failed to update configuration');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error: ' + error.message);
-        } finally {
-            // Restore button state and remove loading overlay
-            submitButton.disabled = false;
-            submitButton.textContent = originalButtonText;
-            document.body.removeChild(loadingOverlay);
-        }
-    });
-
-    // Add new one-time service
-    document.getElementById('addOneTimeService').addEventListener('click', () => {
-        const container = document.getElementById('oneTimeServices');
-        const newIndex = container.children.length;
-        
-        const serviceHTML = `
-            <div class="service-item card mb-3 p-3">
-                <div class="mb-2">
-                    <label class="form-label">Service Name</label>
-                    <input type="text" class="form-control" name="oneTime[${newIndex}][name]" value="">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Description</label>
-                    <input type="text" class="form-control" name="oneTime[${newIndex}][description]" value="">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Price</label>
-                    <input type="number" class="form-control" name="oneTime[${newIndex}][price]" value="0">
-                </div>
-                <button type="button" class="btn btn-danger btn-sm mt-2 remove-service" style="width: fit-content;">Remove Service</button>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', serviceHTML);
-    });
-
-    // Add new subscription service
-    document.getElementById('addSubscriptionService').addEventListener('click', () => {
-        const container = document.getElementById('subscriptionServices');
-        const newIndex = container.children.length;
-        
-        const serviceHTML = `
-            <div class="service-item card mb-3 p-3">
-                <div class="mb-2">
-                    <label class="form-label">Service Name</label>
-                    <input type="text" class="form-control" name="subscription[${newIndex}][name]" value="">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Description</label>
-                    <input type="text" class="form-control" name="subscription[${newIndex}][description]" value="">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Price</label>
-                    <input type="number" class="form-control" name="subscription[${newIndex}][price]" value="0">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Billing Frequency</label>
-                    <select class="form-control" name="subscription[${newIndex}][billingFrequency]">
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                    </select>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Services Per Period</label>
-                    <input type="number" class="form-control" name="subscription[${newIndex}][servicesPerPeriod]" value="1">
-                </div>
-                <button type="button" class="btn btn-danger btn-sm mt-2 remove-service" style="width: fit-content;">Remove Service</button>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', serviceHTML);
-    });
-
-    // Remove service button handler
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-service')) {
-            if (confirm('Are you sure you want to remove this service?')) {
-                e.target.closest('.service-item').remove();
-            }
-        }
-    });
-
-    // Add this right after the form submission code
-    const debugFormSubmission = async (formData) => {
-        console.log('Sending data:', formData);
-        try {
-            const response = await fetch('/api/update-business-config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-            const result = await response.json();
-            console.log('Response:', result);
-            return result;
-        } catch (error) {
-            console.error('Error:', error);
-            throw error;
-        }
-    };
-
-    async function cancelSubscription(userId) {
-        if (!confirm('Are you sure you want to cancel this subscription?')) return;
-        
-        try {
-            const response = await fetch(`/api/cancel-subscription/${userId}`, {
-                method: 'POST'
-            });
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Failed to cancel subscription');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to cancel subscription');
-        }
-    }
-
-    async function resetUsage(userId) {
-        if (!confirm('Are you sure you want to reset the usage count?')) return;
-        
-        try {
-            const response = await fetch(`/api/reset-subscription-usage/${userId}`, {
-                method: 'POST'
-            });
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Failed to reset usage');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to reset usage');
-        }
-    }
 
     // Add this to the extra_scripts block
     document.querySelectorAll('.mark-paid').forEach(button => {
