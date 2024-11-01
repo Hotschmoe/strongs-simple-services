@@ -1,4 +1,4 @@
-from flask import Flask, render_template, g, redirect, url_for, request, flash, session, jsonify, send_from_directory
+from flask import Flask, render_template, g, redirect, url_for, request, flash, session, jsonify, send_from_directory, send_file
 import uuid
 from database import init_db
 from extensions import db
@@ -9,6 +9,7 @@ import base64
 import json
 import os
 from datetime import datetime, timedelta
+import shutil
 
 app = Flask(__name__)
 init_db(app)
@@ -304,6 +305,59 @@ def manage_order(order_id):
         
         db.session.commit()
         return jsonify({'success': True})
+
+@app.route('/api/backup', methods=['POST'])
+def backup_database():
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # Create backups directory if it doesn't exist
+        backup_dir = os.path.join(app.instance_path, 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        # Generate backup filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f'app_backup_{timestamp}.sqlite'
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        # Copy the database file
+        db_path = os.path.join(app.instance_path, 'app.sqlite')
+        shutil.copy2(db_path, backup_path)
+        
+        return jsonify({'success': True, 'filename': backup_filename})
+    except Exception as e:
+        app.logger.error(f"Backup failed: {str(e)}")
+        return jsonify({'error': 'Backup failed'}), 500
+
+@app.route('/api/backup-download', methods=['POST'])
+def backup_and_download():
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # Create backup
+        backup_dir = os.path.join(app.instance_path, 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f'app_backup_{timestamp}.sqlite'
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        # Copy the database file
+        db_path = os.path.join(app.instance_path, 'app.sqlite')
+        shutil.copy2(db_path, backup_path)
+        
+        # Send the file
+        return send_file(
+            backup_path,
+            as_attachment=True,
+            download_name=backup_filename,
+            mimetype='application/x-sqlite3'
+        )
+    except Exception as e:
+        app.logger.error(f"Backup and download failed: {str(e)}")
+        return jsonify({'error': 'Backup and download failed'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
