@@ -123,13 +123,8 @@
         const selectedService = document.querySelector('.service-card.selected');
         const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
 
-        if (!selectedService) {
-            alert('Please select a service');
-            return;
-        }
-
-        if (!paymentMethod) {
-            alert('Please select a payment method');
+        if (!selectedService || !paymentMethod) {
+            alert('Please select a service and payment method');
             return;
         }
 
@@ -138,7 +133,10 @@
         const price = selectedService.dataset.price;
 
         try {
+            let orderId;
+
             if (paymentMethod.value === 'card') {
+                // For card payments, create payment intent first (which creates the order)
                 const response = await fetch('/create-payment-intent', {
                     method: 'POST',
                     headers: {
@@ -155,7 +153,8 @@
                     throw new Error('Payment intent creation failed');
                 }
 
-                const { clientSecret } = await response.json();
+                const { clientSecret, orderId: createdOrderId } = await response.json();
+                orderId = createdOrderId;
 
                 const { error } = await stripe.confirmCardPayment(clientSecret, {
                     payment_method: {
@@ -166,27 +165,30 @@
                 if (error) {
                     throw new Error(error.message);
                 }
+            } else {
+                // For cash payments, create order directly
+                const orderResponse = await fetch('/submit-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        serviceType,
+                        serviceId,
+                        paymentMethod: paymentMethod.value,
+                        price
+                    })
+                });
+
+                if (!orderResponse.ok) {
+                    throw new Error('Failed to place order');
+                }
+
+                const response = await orderResponse.json();
+                orderId = response.orderId;
             }
 
-            // Submit order
-            const orderResponse = await fetch('/submit-order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    serviceType,
-                    serviceId,
-                    paymentMethod: paymentMethod.value,
-                    price
-                })
-            });
-
-            if (!orderResponse.ok) {
-                throw new Error('Failed to place order');
-            }
-
-            const { orderId } = await orderResponse.json();
+            // Display confirmation
             document.getElementById('orderId').textContent = orderId;
             document.getElementById('orderConfirmation').style.display = 'block';
             document.getElementById('orderForm').style.display = 'none';

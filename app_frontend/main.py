@@ -534,6 +534,20 @@ def create_payment_intent():
         if not all([service_type, service_id, price]):
             return jsonify({'error': 'Missing required payment information'}), 400
 
+        # Create order first
+        order_id = str(uuid.uuid4())
+        order = Order(
+            id=order_id,
+            user_id=g.user.id,
+            service_type=service_id,
+            quantity=1,
+            total=float(price),
+            payment_method='card',
+            payment_status='pending',
+            is_subscription_order=(service_type == 'subscription')
+        )
+        db.session.add(order)
+
         # Create or retrieve Stripe customer
         if not g.user.stripe_customer_id:
             customer = stripe.Customer.create(
@@ -545,18 +559,24 @@ def create_payment_intent():
 
         # Create payment intent
         intent = stripe.PaymentIntent.create(
-            amount=int(float(price) * 100),  # Convert to cents
+            amount=int(float(price) * 100),
             currency=business_config.get('paymentSettings', {}).get('currency', 'usd'),
             customer=g.user.stripe_customer_id,
             metadata={
                 'service_type': service_type,
                 'service_id': service_id,
-                'user_id': g.user.id
+                'user_id': g.user.id,
+                'order_id': order.id
             }
         )
         
+        # Store the payment intent ID in the order
+        order.stripe_payment_intent_id = intent.id
+        db.session.commit()
+        
         return jsonify({
-            'clientSecret': intent.client_secret
+            'clientSecret': intent.client_secret,
+            'orderId': order.id  # Return the order ID
         })
     except stripe.error.StripeError as e:
         app.logger.error(f"Stripe API error: {str(e)}")
@@ -580,7 +600,7 @@ def submit_order():
         if not all([service_type, service_id, payment_method, price]):
             return jsonify({'error': 'Missing required order information'}), 400
 
-        # Create order
+        # Create order with correct payment status
         order_id = str(uuid.uuid4())
         order = Order(
             id=order_id,
@@ -589,7 +609,8 @@ def submit_order():
             quantity=1,
             total=float(price),
             payment_method=payment_method,
-            payment_status='pending' if payment_method == 'card' else 'paid',
+            # Set initial payment status based on payment method
+            payment_status='pending' if payment_method == 'card' else 'unpaid',
             is_subscription_order=(service_type == 'subscription')
         )
         db.session.add(order)
@@ -634,6 +655,9 @@ def handle_successful_payment(payment_intent):
         if order:
             order.payment_status = 'paid'
             db.session.commit()
+            app.logger.info(f"Order {order.id} marked as paid")
+        else:
+            app.logger.error(f"Order not found for payment intent {payment_intent.id}")
     except Exception as e:
         app.logger.error(f"Payment success handling failed: {str(e)}")
 
