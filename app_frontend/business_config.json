@@ -2,21 +2,32 @@
     "businessName": "Ponderosa Paintworks",
     "businessDescription": "Cerakote coating and custom paintwork",
     "about": "Ponderosa Paintworks specializes in high-quality Cerakote coating and custom paintwork. With years of experience and attention to detail, we deliver exceptional finishes for all your needs.",
-    "services": [
-      {
-        "name": "Standard Paint",
-        "description": "Regular paint service",
-        "price": 10
-      },
-      {
-        "name": "Rush Paint",
-        "description": "Expedited paint service",
-        "price": 15
-      },
-      {
-        "name": "Cerakote",
-        "description": "Cerakote coating",
-        "price": 20
-      }
-    ]
-  }
+    "services": {
+        "oneTime": [
+            {
+                "name": "Standard Paint",
+                "description": "Regular paint service",
+                "price": 10
+            },
+            {
+                "name": "Rush Paint",
+                "description": "Expedited paint service",
+                "price": 15
+            },
+            {
+                "name": "Cerakote",
+                "description": "Cerakote coating",
+                "price": 20
+            }
+        ],
+        "subscription": [
+            {
+                "name": "Monthly Maintenance",
+                "description": "Regular maintenance and touch-ups",
+                "price": 50,
+                "billingFrequency": "monthly",
+                "servicesPerPeriod": 3
+            }
+        ]
+    }
+}
