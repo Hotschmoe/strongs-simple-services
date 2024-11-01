@@ -815,5 +815,59 @@ def business_config_page():
     
     return render_template('business_config.html', business_config=business_config)
 
+@app.route('/subscription-service', methods=['POST'])
+def request_subscription_service():
+    if not g.user:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    subscription_id = request.form.get('subscription_id')
+    if not subscription_id:
+        flash('Subscription ID is required.', 'error')
+        return redirect(url_for('order_service'))
+
+    # Get the subscription
+    subscription = Subscription.query.filter_by(
+        user_id=g.user.id,
+        subscription_id=subscription_id,
+        status='active'
+    ).first()
+
+    if not subscription:
+        flash('No active subscription found.', 'error')
+        return redirect(url_for('order_service'))
+
+    if subscription.services_used >= subscription.services_allowed:
+        flash('No services remaining in your subscription.', 'error')
+        return redirect(url_for('order_service'))
+
+    try:
+        # Create a new order for the service
+        order = Order(
+            id=str(uuid.uuid4()),
+            user_id=g.user.id,
+            service_type=subscription_id,
+            quantity=1,
+            total=0,  # Free since it's part of subscription
+            status='Pending',
+            payment_status='paid',  # Already paid through subscription
+            payment_method='subscription',
+            is_subscription_order=True
+        )
+        
+        # Increment the services used count
+        subscription.services_used += 1
+        
+        db.session.add(order)
+        db.session.commit()
+
+        flash('Service requested successfully!', 'success')
+        return redirect(url_for('order_service'))
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Failed to create subscription service order: {str(e)}")
+        flash('Failed to request service. Please try again.', 'error')
+        return redirect(url_for('order_service'))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

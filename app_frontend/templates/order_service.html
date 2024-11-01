@@ -17,6 +17,12 @@
                     <h4>Active Subscription: {{ subscription.id|replace('-', ' ')|title }}</h4>
                     <p>Services remaining this period: {{ subscription.remaining_services }}</p>
                     <p>Subscription ends: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
+                    {% if subscription.remaining_services > 0 %}
+                    <form action="{{ url_for('request_subscription_service') }}" method="POST">
+                        <input type="hidden" name="subscription_id" value="{{ subscription.id }}">
+                        <button type="submit" class="btn btn-primary">Request Service</button>
+                    </form>
+                    {% endif %}
                 </div>
                 {% endfor %}
             {% endif %}
