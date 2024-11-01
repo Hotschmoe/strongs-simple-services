@@ -93,8 +93,8 @@
     <!-- Order History Section -->
     <div class="card mb-4">
         <div class="card-body">
-            <h3 class="card-title">Order History</h3>
-            {% if user.orders|selectattr('status', 'equalto', 'completed')|list %}
+            <h3 class="card-title">Completed Orders</h3>
+            {% if user.orders|selectattr('status', 'equalto', 'Completed')|list %}
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
@@ -108,7 +108,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for order in user.orders|selectattr('status', 'equalto', 'completed')|list %}
+                            {% for order in user.orders|selectattr('status', 'equalto', 'Completed')|list %}
                                 <tr>
                                     <td>{{ order.id[:8] }}...</td>
                                     <td>{{ order.service_type }}</td>
@@ -116,7 +116,7 @@
                                     <td>{{ order.payment_method|title }}</td>
                                     <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
                                     <td>
-                                        <a href="{{ url_for('print_receipt', order_id=order.id) }}" 
+                                        <a href="{{ url_for('get_receipt', order_id=order.id) }}" 
                                            target="_blank" 
                                            class="btn btn-sm btn-outline-secondary">
                                             <i class="fas fa-print"></i> Receipt

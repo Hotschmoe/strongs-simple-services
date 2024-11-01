@@ -707,6 +707,19 @@ def handle_successful_payment(payment_intent):
             order.payment_status = 'paid'
             db.session.commit()
             app.logger.info(f"Order {order.id} marked as paid")
+            
+            # Activate the subscription if it's a subscription order
+            if order.is_subscription_order:
+                subscription = Subscription.query.filter_by(
+                    user_id=order.user_id,
+                    subscription_id=order.service_type,
+                    status='pending'
+                ).first()
+                
+                if subscription:
+                    subscription.status = 'active'
+                    db.session.commit()
+                    app.logger.info(f"Subscription {subscription.id} activated")
         else:
             app.logger.error(f"Order not found for payment intent {payment_intent.id}")
     except Exception as e:
