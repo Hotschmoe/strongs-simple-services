@@ -2,7 +2,7 @@ from flask import Flask, render_template, g, redirect, url_for, request, flash, 
 import uuid
 from database import init_db
 from extensions import db, migrate
-from models import User, Order, Subscription
+from models import User, Order
 import qrcode
 import io
 import base64
@@ -148,55 +148,20 @@ def place_order():
         return jsonify({'error': 'User not logged in'}), 401
 
     service_type = request.form.get('service_type')
-    order_type = request.form.get('order_type')
     quantity = float(request.form.get('quantity'))
     total = request.form.get('total')
 
     order_id = str(uuid.uuid4())
 
-    if order_type == 'one-time':
-        new_order = Order(
-            id=order_id,
-            user_id=g.user.id,
-            service_type=service_type,
-            order_type=order_type,
-            quantity=quantity,
-            total=total,
-            status='Pending'
-        )
-        db.session.add(new_order)
-    elif order_type == 'subscription':
-        # Find the service in business_config
-        service = next((s for s in business_config['services'] if s['name'].lower().replace(' ', '_') == service_type), None)
-        if not service or not service['subscription']['available']:
-            return jsonify({'error': 'Invalid subscription service'}), 400
-
-        # Create a new subscription
-        new_subscription = Subscription(
-            user_id=g.user.id,
-            service_type=service_type,
-            monthly_price=float(total),
-            quantity_per_month=service['subscription']['quantityPerMonth'],
-            start_date=datetime.utcnow(),
-            end_date=datetime.utcnow() + timedelta(days=30),  # Set initial subscription for 30 days
-            is_active=True
-        )
-        db.session.add(new_subscription)
-
-        # Create an order for the first month of subscription
-        new_order = Order(
-            id=order_id,
-            user_id=g.user.id,
-            service_type=service_type,
-            order_type=order_type,
-            quantity=1,  # For subscriptions, quantity is always 1
-            total=total,
-            status='Pending'
-        )
-        db.session.add(new_order)
-    else:
-        return jsonify({'error': 'Invalid order type'}), 400
-
+    new_order = Order(
+        id=order_id,
+        user_id=g.user.id,
+        service_type=service_type,
+        quantity=quantity,
+        total=total,
+        status='Pending'
+    )
+    db.session.add(new_order)
     db.session.commit()
 
     return jsonify({'order_id': order_id}), 200

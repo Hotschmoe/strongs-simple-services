@@ -30,13 +30,6 @@
                                     <p class="card-text">{{ service['description'] }}</p>
                                     <p class="card-text">
                                         <strong>Price:</strong> ${{ service['price'] }}
-                                        {% if service['subscription']['available'] %}
-                                        <br>
-                                        <small class="text-muted">
-                                            Subscription available: ${{ service['subscription']['monthlyPrice'] }}/month
-                                            for {{ service['subscription']['quantityPerMonth'] }} services
-                                        </small>
-                                        {% endif %}
                                     </p>
                                 </div>
                             </div>
