@@ -54,6 +54,10 @@ def before_request():
 def index():
     return redirect(url_for('homepage'))
 
+@app.route('/index')
+def index_page():
+    return render_template('index.html', business_config=business_config)
+
 @app.route('/homepage')
 def homepage():
     return render_template('homepage.html', business_config=business_config)
@@ -63,7 +67,7 @@ def order_service():
     if not g.user:
         flash('Please log in to place an order.', 'warning')
         return redirect(url_for('login'))
-    return render_template('index.html', user=g.user, business_config=business_config)
+    return render_template('order_service.html', user=g.user, business_config=business_config)
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():

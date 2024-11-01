@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Order Service - {{ business_config['businessName'] }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-3">Order Service</h1>
+                <p class="lead">{{ business_config['businessDescription'] }}</p>
+            </div>
+
+            <form id="orderForm">
+                <div class="row mb-5">
+                    <div class="col-md-12">
+                        <h2 class="mb-4">Our Services</h2>
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <h3>One-Time Services</h3>
+                                <div class="row">
+                                    {% for service in business_config['services']['oneTime'] %}
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card service-card h-100" 
+                                             data-service="{{ service['name'].lower().replace(' ', '_') }}" 
+                                             data-price="{{ service['price'] }}"
+                                             data-type="oneTime">
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ service['name'] }}</h5>
+                                                <p class="card-text">{{ service['description'] }}</p>
+                                                <p class="card-text mb-1">Price: ${{ service['price'] }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <h3>Subscription Services</h3>
+                                <div class="row">
+                                    {% for service in business_config['services']['subscription'] %}
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card service-card h-100" 
+                                             data-service="{{ service['name'].lower().replace(' ', '_') }}" 
+                                             data-price="{{ service['price'] }}"
+                                             data-type="subscription"
+                                             data-billing-frequency="{{ service['billingFrequency'] }}"
+                                             data-services-per-period="{{ service['servicesPerPeriod'] }}">
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ service['name'] }}</h5>
+                                                <p class="card-text">{{ service['description'] }}</p>
+                                                <p class="card-text mb-1">Price: ${{ service['price'] }}/{{ service['billingFrequency'] }}</p>
+                                                <p class="card-text">
+                                                    <small class="text-muted">Includes {{ service['servicesPerPeriod'] }} services per {{ service['billingFrequency'] }}</small>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="mb-3" id="quantityField">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" min="1" value="1" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Total</label>
+                            <div id="total" class="form-control-plaintext">$0.00</div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">Place Order</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <div id="orderConfirmation" class="text-center mt-4" style="display: none;">
+                <h2>Order Confirmation</h2>
+                <p>Your order has been placed successfully. Order ID: <span id="orderId"></span></p>
+                <p><strong>Payment: In-person at pickup. Online payment coming soon!</strong></p>
+                <button id="printReceipt" class="btn btn-secondary">Print Receipt</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const form = document.getElementById('orderForm');
+    const quantity = document.getElementById('quantity');
+    const total = document.getElementById('total');
+    const orderConfirmation = document.getElementById('orderConfirmation');
+    const orderId = document.getElementById('orderId');
+    const printReceipt = document.getElementById('printReceipt');
+
+    let selectedService = null;
+
+    function updateTotal() {
+        if (selectedService) {
+            const price = parseFloat(selectedService.dataset.price);
+            const qty = parseFloat(quantity.value);
+            const totalPrice = price * qty;
+            total.textContent = `$${totalPrice.toFixed(2)}`;
+        } else {
+            total.textContent = '$0.00';
+        }
+    }
+
+    // Listen for clicks on any service-card
+    document.addEventListener('click', (e) => {
+        const card = e.target.closest('.service-card');
+        if (card) {
+            document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedService = card;
+            updateTotal();
+        }
+    });
+
+    quantity.addEventListener('input', updateTotal);
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedService) {
+            alert('Please select a service');
+            return;
+        }
+        const formData = new FormData(form);
+        formData.append('service_type', selectedService.dataset.service);
+        formData.append('quantity', quantity.value);
+        formData.append('total', total.textContent.substring(1));
+
+        try {
+            const response = await fetch('/place_order', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                orderConfirmation.style.display = 'block';
+                form.style.display = 'none';
+                orderId.textContent = data.order_id;
+            } else {
+                throw new Error('Failed to place order');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while placing the order. Please try again.');
+        }
+    });
+
+    printReceipt.addEventListener('click', () => {
+        window.print();
+    });
+</script>
+{% endblock %}
+
+{% block page_specific_css %}
+<style>
+    #serviceCards {
+        width: 100%;
+    }
+
+    .service-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid #e0e0e0;
+    }
+
+    .service-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .service-card.selected {
+        background-color: #f8f9fa;
+        border-color: #025;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    body.dark-mode .service-card {
+        border-color: #4a4a4a;
+    }
+
+    body.dark-mode .service-card.selected {
+        background-color: #2c3e50;
+        border-color: #3498db;
+    }
+
+    #total.form-control-plaintext {
+        padding: 0.375rem 0.75rem;
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .service-card-wrapper {
+            flex-basis: 100%;
+        }
+    }
+</style>
+{% endblock %}

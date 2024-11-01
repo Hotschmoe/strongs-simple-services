@@ -22,19 +22,46 @@
                 <div class="col-md-12">
                     <h2 class="mb-4">Our Services</h2>
                     <div class="row">
-                        {% for service in business_config['services'] %}
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ service['name'] }}</h5>
-                                    <p class="card-text">{{ service['description'] }}</p>
-                                    <p class="card-text">
-                                        <strong>Price:</strong> ${{ service['price'] }}
-                                    </p>
+                        <div class="col-12 mb-4">
+                            <h3>One-Time Services</h3>
+                            <div class="row">
+                                {% for service in business_config['services']['oneTime'] %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ service['name'] }}</h5>
+                                            <p class="card-text">{{ service['description'] }}</p>
+                                            <p class="card-text">
+                                                <strong>Price:</strong> ${{ service['price'] }}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
+                                {% endfor %}
                             </div>
                         </div>
-                        {% endfor %}
+
+                        <div class="col-12">
+                            <h3>Subscription Services</h3>
+                            <div class="row">
+                                {% for service in business_config['services']['subscription'] %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ service['name'] }}</h5>
+                                            <p class="card-text">{{ service['description'] }}</p>
+                                            <p class="card-text">
+                                                <strong>Price:</strong> ${{ service['price'] }}/{{ service['billingFrequency'] }}
+                                            </p>
+                                            <p class="card-text">
+                                                <small class="text-muted">Includes {{ service['servicesPerPeriod'] }} services per {{ service['billingFrequency'] }}</small>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
