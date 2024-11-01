@@ -12,11 +12,13 @@
             </div>
 
             {% if g.user.has_active_subscription() %}
-            <div class="alert alert-info">
-                <h4>Active Subscription: {{ g.user.subscription_type }}</h4>
-                <p>Services remaining this period: {{ g.user.get_remaining_services() }}</p>
-                <p>Subscription ends: {{ g.user.subscription_end_date.strftime('%Y-%m-%d') }}</p>
-            </div>
+                {% for subscription in g.user.get_active_subscriptions() %}
+                <div class="alert alert-info">
+                    <h4>Active Subscription: {{ subscription.id|replace('-', ' ')|title }}</h4>
+                    <p>Services remaining this period: {{ subscription.remaining_services }}</p>
+                    <p>Subscription ends: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
+                </div>
+                {% endfor %}
             {% endif %}
 
             <form id="orderForm">
@@ -51,22 +53,24 @@
                                 <h3>Subscription Services</h3>
                                 <div class="row">
                                     {% for service in business_config['services']['subscription'] %}
-                                    <div class="col-md-4 mb-4">
-                                        <div class="card service-card h-100" 
-                                             data-service="{{ service['name'] }}"
-                                             data-type="subscription"
-                                             data-price="{{ service['price'] }}"
-                                             data-billing-frequency="{{ service['billingFrequency'] }}"
-                                             data-services-per-period="{{ service['servicesPerPeriod'] }}">
-                                            <div class="card-body">
-                                                <h5 class="card-title">{{ service['name'] }}</h5>
-                                                <p class="card-text">{{ service['description'] }}</p>
-                                                <p class="card-text">
-                                                    <strong>Price:</strong> ${{ service['price'] }}/{{ service['billingFrequency'] }}
-                                                </p>
+                                        {% if not g.user.has_active_subscription_for(service['id']) %}
+                                        <div class="col-md-4 mb-4">
+                                            <div class="card service-card h-100" 
+                                                 data-service="{{ service['id'] }}"
+                                                 data-type="subscription"
+                                                 data-price="{{ service['price'] }}"
+                                                 data-billing-frequency="{{ service['billingFrequency'] }}"
+                                                 data-services-per-period="{{ service['servicesPerPeriod'] }}">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ service['name'] }}</h5>
+                                                    <p class="card-text">{{ service['description'] }}</p>
+                                                    <p class="card-text">
+                                                        <strong>Price:</strong> ${{ service['price'] }}/{{ service['billingFrequency'] }}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                        {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>

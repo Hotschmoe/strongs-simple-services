@@ -2,7 +2,7 @@ from flask import Flask, render_template, g, redirect, url_for, request, flash, 
 import uuid
 from database import init_db
 from extensions import db
-from models import User, Order
+from models import User, Order, Subscription
 import qrcode
 import io
 import base64
@@ -557,20 +557,35 @@ def create_payment_intent():
         )
         db.session.add(order)
 
-        # Create or retrieve Stripe customer
-        if not g.user.stripe_customer_id:
-            customer = stripe.Customer.create(
-                email=g.user.email,
-                metadata={'user_id': g.user.id}
+        # If it's a subscription order, prepare the subscription
+        if service_type == 'subscription':
+            subscription_config = next(
+                (s for s in business_config['services']['subscription'] 
+                 if s['id'] == service_id),
+                None
             )
-            g.user.stripe_customer_id = customer.id
-            db.session.commit()
+            
+            if not subscription_config:
+                raise ValueError('Invalid subscription service')
+
+            # Create subscription record (will be activated after payment)
+            new_subscription = Subscription(
+                user_id=g.user.id,
+                subscription_id=service_id,
+                status='pending',  # Will be activated after payment
+                start_date=datetime.utcnow(),
+                end_date=datetime.utcnow() + timedelta(days=30),
+                services_allowed=subscription_config['servicesPerPeriod'],
+                services_used=0
+            )
+            db.session.add(new_subscription)
+
+        db.session.commit()
 
         # Create payment intent
         intent = stripe.PaymentIntent.create(
             amount=int(float(price) * 100),
             currency=business_config.get('paymentSettings', {}).get('currency', 'usd'),
-            customer=g.user.stripe_customer_id,
             metadata={
                 'service_type': service_type,
                 'service_id': service_id,
@@ -579,20 +594,18 @@ def create_payment_intent():
             }
         )
         
-        # Store the payment intent ID in the order
         order.stripe_payment_intent_id = intent.id
         db.session.commit()
         
         return jsonify({
             'clientSecret': intent.client_secret,
-            'orderId': order.id  # Return the order ID
+            'orderId': order.id
         })
-    except stripe.error.StripeError as e:
-        app.logger.error(f"Stripe API error: {str(e)}")
-        return jsonify({'error': 'Payment service error'}), 400
+
     except Exception as e:
+        db.session.rollback()
         app.logger.error(f"Payment intent creation failed: {str(e)}")
-        return jsonify({'error': 'An unexpected error occurred'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/submit-order', methods=['POST'])
 def submit_order():
@@ -606,8 +619,28 @@ def submit_order():
         payment_method = data.get('paymentMethod')
         price = data.get('price')
 
+        app.logger.debug(f"Order submission - Service Type: {service_type}, Service ID: {service_id}")
+        app.logger.debug(f"Available subscription services: {business_config['services'].get('subscription', [])}")
+
         if not all([service_type, service_id, payment_method, price]):
+            app.logger.error(f"Missing required fields: {{'serviceType': service_type, 'serviceId': service_id, 'paymentMethod': payment_method, 'price': price}}")
             return jsonify({'error': 'Missing required order information'}), 400
+
+        # Handle subscription
+        if service_type == 'subscription':
+            # Find subscription details from business config
+            subscription_config = next(
+                (s for s in business_config['services']['subscription'] 
+                 if s.get('id') == service_id),  # Added .get() for safer access
+                None
+            )
+            
+            if not subscription_config:
+                app.logger.error(f"Invalid subscription service ID: {service_id}")
+                app.logger.error(f"Available subscription IDs: {[s.get('id') for s in business_config['services'].get('subscription', [])]}")
+                raise ValueError(f'Invalid subscription service: {service_id}')
+
+            app.logger.debug(f"Found subscription config: {subscription_config}")
 
         # Create order with correct payment status
         order_id = str(uuid.uuid4())
@@ -618,7 +651,6 @@ def submit_order():
             quantity=1,
             total=float(price),
             payment_method=payment_method,
-            # Set initial payment status based on payment method
             payment_status='pending' if payment_method == 'card' else 'unpaid',
             is_subscription_order=(service_type == 'subscription')
         )
@@ -627,21 +659,26 @@ def submit_order():
         # Handle subscription
         if service_type == 'subscription':
             # Find subscription details from business config
-            subscription = next(
+            subscription_config = next(
                 (s for s in business_config['services']['subscription'] 
-                 if s['name'] == service_id),
+                 if s['id'] == service_id),
                 None
             )
             
-            if not subscription:
+            if not subscription_config:
                 raise ValueError('Invalid subscription service')
 
-            g.user.subscription_status = 'active'
-            g.user.subscription_type = service_id
-            g.user.subscription_start_date = datetime.utcnow()
-            g.user.subscription_end_date = datetime.utcnow() + timedelta(days=30)
-            g.user.services_allowed = subscription['servicesPerPeriod']
-            g.user.services_used = 0
+            # Create new subscription
+            new_subscription = Subscription(
+                user_id=g.user.id,
+                subscription_id=service_id,
+                status='active',
+                start_date=datetime.utcnow(),
+                end_date=datetime.utcnow() + timedelta(days=30),  # Adjust based on billing frequency
+                services_allowed=subscription_config['servicesPerPeriod'],
+                services_used=0
+            )
+            db.session.add(new_subscription)
 
         db.session.commit()
         return jsonify({
@@ -710,64 +747,48 @@ def cancel_subscription():
         return redirect(url_for('login'))
     
     try:
-        # Check if user has an active subscription
-        if not g.user.has_active_subscription():
-            flash('No active subscription found.', 'warning')
+        subscription_id = request.form.get('subscription_id')
+        if not subscription_id:
+            flash('Subscription ID is required.', 'warning')
+            return redirect(url_for('profile'))
+
+        # Check if user has this specific subscription
+        if not g.user.has_active_subscription_for(subscription_id):
+            flash('No active subscription found with this ID.', 'warning')
             return redirect(url_for('profile'))
 
         # If using Stripe, cancel the subscription in Stripe
-        if g.user.stripe_customer_id and business_config['paymentSettings'].get('stripeEnabled', False):
+        if business_config['paymentSettings'].get('stripeEnabled', False):
             stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-            
             try:
-                # Fetch customer's subscriptions
-                subscriptions = stripe.Subscription.list(
-                    customer=g.user.stripe_customer_id,
-                    status='active',
-                    limit=1
-                )
-                
-                # Cancel the subscription in Stripe if it exists
-                if subscriptions.data:
-                    stripe.Subscription.modify(
-                        subscriptions.data[0].id,
-                        cancel_at_period_end=True
-                    )
+                # Implement Stripe subscription cancellation here
+                pass
             except stripe.error.StripeError as e:
                 app.logger.error(f"Stripe subscription cancellation failed: {str(e)}")
                 flash('Failed to cancel subscription with payment provider.', 'danger')
                 return redirect(url_for('profile'))
 
-        # Update user's subscription status in database
-        g.user.subscription_status = 'canceled'
-        g.user.subscription_end_date = datetime.utcnow()  # Immediate cancellation
-        # Alternative: Let subscription run until the end of current period
-        # g.user.subscription_status = 'pending_cancellation'
-        
-        # Create a cancellation record in orders
-        cancellation_order = Order(
-            id=str(uuid.uuid4()),
-            user_id=g.user.id,
-            service_type=g.user.subscription_type,
-            quantity=0,
-            total=0,
-            status='Completed',
-            payment_status='not_applicable',
-            payment_method='none',
-            is_subscription_order=True
-        )
-        
-        db.session.add(cancellation_order)
-        db.session.commit()
+        # Cancel the subscription in our database
+        if g.user.cancel_subscription(subscription_id):
+            # Create a cancellation record in orders
+            cancellation_order = Order(
+                id=str(uuid.uuid4()),
+                user_id=g.user.id,
+                service_type=subscription_id,
+                quantity=0,
+                total=0,
+                status='Completed',
+                payment_status='not_applicable',
+                payment_method='none',
+                is_subscription_order=True
+            )
+            db.session.add(cancellation_order)
+            db.session.commit()
 
-        # Send cancellation confirmation email (if implemented)
-        try:
-            # Implement email sending logic here
-            pass
-        except Exception as e:
-            app.logger.error(f"Failed to send cancellation email: {str(e)}")
+            flash('Your subscription has been successfully canceled.', 'success')
+        else:
+            flash('Failed to cancel subscription. Please try again.', 'danger')
 
-        flash('Your subscription has been successfully canceled.', 'success')
         return redirect(url_for('profile'))
 
     except Exception as e:

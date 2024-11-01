@@ -21,12 +21,6 @@
                 "description": "Pickup, Wash, Fold. in 48 hours",
                 "price": 35,
                 "id": "rush-loads"
-            },
-            {
-                "name": "Faster Laod",
-                "description": "asd",
-                "price": 22,
-                "id": "faster-laod"
             }
         ],
         "subscription": [
