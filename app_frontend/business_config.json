@@ -5,23 +5,23 @@
     "services": {
         "oneTime": [
             {
-                "name": "Standard Load",
-                "description": "Regular wash, dry, and fold service",
-                "price": 25
-            },
-            {
                 "name": "Rush Job",
                 "description": "Stanard Load, within 48 hours.",
-                "price": 55
+                "price": 222
+            },
+            {
+                "name": "asd",
+                "description": "asd",
+                "price": 22
             }
         ],
         "subscription": [
             {
-                "name": "Monthly Laundry Plan",
-                "description": "Regular laundry service with monthly billing",
-                "price": 120,
-                "billingFrequency": "monthly",
-                "servicesPerPeriod": 4
+                "name": "asd",
+                "description": "asd",
+                "price": 2,
+                "billingFrequency": "weekly",
+                "servicesPerPeriod": 5
             }
         ]
     }

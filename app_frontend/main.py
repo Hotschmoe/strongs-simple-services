@@ -404,30 +404,81 @@ def update_business_config():
         
     try:
         new_config = request.json
-        
-        # Validate the data structure
-        required_fields = ['businessName', 'businessDescription', 'about', 'services']
-        if not all(key in new_config for key in required_fields):
-            return jsonify({'success': False, 'message': 'Missing required fields'}), 400
-            
-        # Validate services structure
-        if not isinstance(new_config['services'], dict) or \
-           not all(key in new_config['services'] for key in ['oneTime', 'subscription']):
-            return jsonify({'success': False, 'message': 'Invalid services structure'}), 400
-            
-        # Save the new configuration
         config_path = os.environ.get('BUSINESS_CONFIG_PATH', '/app/business_config.json')
-        with open(config_path, 'w') as f:
-            json.dump(new_config, f, indent=4)
+        backup_path = f"{config_path}.backup"  # Single backup file
+        
+        # Enhanced validation
+        if not new_config:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+
+        # Validate required fields
+        required_fields = ['businessName', 'businessDescription', 'about', 'services']
+        missing_fields = [field for field in required_fields if not new_config.get(field)]
+        if missing_fields:
+            return jsonify({
+                'success': False, 
+                'message': f'Missing required fields: {", ".join(missing_fields)}'
+            }), 400
+
+        # Validate services structure and data
+        services = new_config.get('services', {})
+        if not isinstance(services, dict):
+            return jsonify({'success': False, 'message': 'Services must be an object'}), 400
+
+        for service_type in ['oneTime', 'subscription']:
+            if service_type not in services:
+                return jsonify({'success': False, 'message': f'Missing {service_type} services'}), 400
             
-        # Update the global business_config variable
-        global business_config
-        business_config = new_config
+            if not isinstance(services[service_type], list):
+                return jsonify({'success': False, 'message': f'{service_type} services must be an array'}), 400
+
+            # Validate each service
+            for idx, service in enumerate(services[service_type]):
+                required_service_fields = ['name', 'description', 'price']
+                if service_type == 'subscription':
+                    required_service_fields.extend(['billingFrequency', 'servicesPerPeriod'])
+
+                missing_service_fields = [field for field in required_service_fields if not service.get(field)]
+                if missing_service_fields:
+                    return jsonify({
+                        'success': False,
+                        'message': f'Service #{idx + 1} missing fields: {", ".join(missing_service_fields)}'
+                    }), 400
+
+        # Create/update backup of current config (only if it exists)
+        if os.path.exists(config_path):
+            try:
+                shutil.copy2(config_path, backup_path)
+            except Exception as e:
+                app.logger.warning(f"Failed to create config backup: {str(e)}")
+
+        try:
+            # Save the new configuration
+            with open(config_path, 'w') as f:
+                json.dump(new_config, f, indent=4)
+                
+            # Update the global business_config
+            global business_config
+            business_config = new_config
+
+            # If save was successful and backup exists, we could optionally remove it
+            # Uncomment the following lines if you want to remove the backup after successful update
+            # if os.path.exists(backup_path):
+            #     os.remove(backup_path)
             
-        return jsonify({
-            'success': True, 
-            'message': 'Configuration updated successfully'
-        })
+            return jsonify({
+                'success': True, 
+                'message': 'Configuration updated successfully'
+            })
+
+        except Exception as e:
+            # If saving failed and we have a backup, restore from backup
+            if os.path.exists(backup_path):
+                shutil.copy2(backup_path, config_path)
+                with open(config_path) as f:
+                    business_config = json.load(f)
+            raise e
+
     except Exception as e:
         app.logger.error(f"Failed to update business config: {str(e)}")
         return jsonify({
