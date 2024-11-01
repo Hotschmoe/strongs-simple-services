@@ -16,6 +16,7 @@
                     <div class="col-md-12">
                         <h2 class="mb-4">Our Services</h2>
                         <div class="row">
+                            {% if business_config['services']['oneTime'] %}
                             <div class="col-12 mb-4">
                                 <h3>One-Time Services</h3>
                                 <div class="row">
@@ -35,7 +36,9 @@
                                     {% endfor %}
                                 </div>
                             </div>
+                            {% endif %}
 
+                            {% if business_config['services']['subscription'] %}
                             <div class="col-12">
                                 <h3>Subscription Services</h3>
                                 <div class="row">
@@ -60,6 +63,7 @@
                                     {% endfor %}
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

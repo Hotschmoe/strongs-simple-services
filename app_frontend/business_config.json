@@ -15,14 +15,6 @@
                 "price": 22
             }
         ],
-        "subscription": [
-            {
-                "name": "asd",
-                "description": "asd",
-                "price": 2,
-                "billingFrequency": "weekly",
-                "servicesPerPeriod": 5
-            }
-        ]
+        "subscription": []
     }
 }
