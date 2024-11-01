@@ -110,31 +110,42 @@ Example configuration:
 
 ```json
 {
-    "businessName": "Your Business",
-    "businessDescription": "Your description",
-    "about": "About your business",
+    "businessName": "Fresh & Clean Laundry",
+    "businessDescription": "Professional laundry and wash services",
+    "about": "Fresh & Clean Laundry provides convenient and reliable laundry services. We handle your clothes with care and ensure they come back clean, fresh, and neatly folded.",
     "paymentSettings": {
         "acceptCash": true,
         "acceptCard": true,
+        "stripeEnabled": true,
         "currency": "usd"
     },
     "services": {
         "oneTime": [
             {
-                "id": "service-1",
-                "name": "Basic Service",
-                "description": "Description",
+                "name": "Standard Loads",
+                "description": "Pickup, Wash, Fold.",
                 "price": 25
+            },
+            {
+                "name": "Rush Loads",
+                "description": "Pickup, Wash, Fold. in 48 hours",
+                "price": 35
             }
         ],
         "subscription": [
             {
-                "id": "sub-1",
-                "name": "Monthly Plan",
-                "description": "Monthly service",
+                "name": "Standard Wash Plan",
+                "description": "4 washes per month",
                 "price": 80,
                 "billingFrequency": "monthly",
                 "servicesPerPeriod": 4
+            },
+            {
+                "name": "Large Wash Plan",
+                "description": "6 washes per month",
+                "price": 90,
+                "billingFrequency": "monthly",
+                "servicesPerPeriod": 6
             }
         ]
     }
