@@ -215,7 +215,7 @@ def qr_code():
     
     return render_template('qr_code.html', qr_code=img_str, business_config=business_config)
 
-@app.route('/robots.txt')
+@app.route('/robots.txt') # This is for google to index the site
 def robots_txt():
     return send_from_directory(app.static_folder, 'robots.txt')
 
