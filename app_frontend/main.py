@@ -1,7 +1,6 @@
 from flask import Flask, render_template, g, redirect, url_for, request, flash, session, jsonify, send_from_directory, send_file
 import uuid
 from database import init_db
-from extensions import db, migrate
 from models import User, Order
 import qrcode
 import io
@@ -12,13 +11,11 @@ from datetime import datetime, timedelta
 import shutil
 import werkzeug
 from werkzeug.utils import secure_filename
-from flask_migrate import upgrade, current
 import subprocess
 from pathlib import Path
 
 app = Flask(__name__)
 init_db(app)
-migrate.init_app(app, db)
 app.secret_key = 'your_secret_key'  # Replace with a real secret key
 
 # Load business configuration
@@ -398,60 +395,6 @@ def restore_database():
     except Exception as e:
         app.logger.error(f"Restore failed: {str(e)}")
         return jsonify({'error': f'Restore failed: {str(e)}'}), 500
-
-@app.route('/api/migrate', methods=['POST'])
-def run_migration():
-    if not g.user or not g.user.is_admin:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    try:
-        # Create automatic backup before migration
-        backup_dir = os.path.join(app.instance_path, 'backups')
-        os.makedirs(backup_dir, exist_ok=True)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_filename = f'pre_migration_backup_{timestamp}.sqlite'
-        backup_path = os.path.join(backup_dir, backup_filename)
-        db_path = os.path.join(app.instance_path, 'app.sqlite')
-        shutil.copy2(db_path, backup_path)
-
-        # Run migrations
-        with app.app_context():
-            # Get current version before upgrade
-            old_version = current()
-            
-            # Run the upgrade
-            upgrade()
-            
-            # Get new version after upgrade
-            new_version = current()
-
-        message = f"Migration completed successfully.\n"
-        message += f"Previous version: {old_version or 'Initial'}\n"
-        message += f"New version: {new_version or 'Initial'}\n"
-        message += f"Backup created: {backup_filename}"
-
-        return jsonify({
-            'success': True,
-            'message': message,
-            'backup': backup_filename
-        })
-
-    except Exception as e:
-        app.logger.error(f"Migration failed: {str(e)}")
-        return jsonify({'error': f'Migration failed: {str(e)}'}), 500
-
-@app.route('/api/db-version')
-def get_db_version():
-    if not g.user or not g.user.is_admin:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    try:
-        with app.app_context():
-            version = current()
-        return jsonify({'version': str(version) if version else 'Initial'})
-    except Exception as e:
-        app.logger.error(f"Error getting DB version: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -8,82 +8,100 @@
 <h2 class="mb-3">Users</h2>
 <div class="card mb-4">
     <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Address</th>
-                    <th>Admin</th>
-                    <th>Active</th>
-                    <th>Created At</th>
-                    <th>Updated At</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.name }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ user.phone }}</td>
-                    <td>{{ user.address }}</td>
-                    <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
-                    <td>{{ 'Yes' if user.is_active else 'No' }}</td>
-                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    <td>
-                        <a href="#" class="btn btn-sm btn-primary edit-user" data-user-id="{{ user.id }}">Edit</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Admin</th>
+                        <th>Active</th>
+                        <th>Subscriber</th>
+                        <th>Sub. End Date</th>
+                        <th>Created At</th>
+                        <th>Updated At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.phone }}</td>
+                        <td>{{ user.address }}</td>
+                        <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+                        <td>{{ 'Yes' if user.is_active else 'No' }}</td>
+                        <td>{{ 'Yes' if user.is_subscriber else 'No' }}</td>
+                        <td>{{ user.subscription_end_date.strftime('%Y-%m-%d') if user.subscription_end_date else 'N/A' }}</td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-primary edit-user" data-user-id="{{ user.id }}">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <h2 class="mb-3">Orders</h2>
 <div class="card">
     <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Service Type</th>
-                    <th>Quantity (kg)</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Created At</th>
-                    <th>Updated At</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                <tr>
-                    <td>{{ order.id }}</td>
-                    <td>{{ order.user.name }}</td>
-                    <td>{{ order.service_type }}</td>
-                    <td>{{ order.quantity }}</td>
-                    <td>{{ order.total }}</td>
-                    <td>{{ order.status }}</td>
-                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    <td>
-                        <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
-                        {% if order.status != 'Completed' %}
-                        <button class="btn btn-sm btn-success complete-order" data-order-id="{{ order.id }}">Mark Complete</button>
-                        {% endif %}
-                        <button class="btn btn-sm btn-secondary print-receipt" data-order-id="{{ order.id }}">Print Receipt</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Service Type</th>
+                        <th>Quantity (kg)</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Subscription</th>
+                        <th>Sub. Period</th>
+                        <th>Sub. Start</th>
+                        <th>Sub. End</th>
+                        <th>Services/Period</th>
+                        <th>Created At</th>
+                        <th>Updated At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.user.name }}</td>
+                        <td>{{ order.service_type }}</td>
+                        <td>{{ order.quantity }}</td>
+                        <td>{{ order.total }}</td>
+                        <td>{{ order.status }}</td>
+                        <td>{{ 'Yes' if order.is_subscription else 'No' }}</td>
+                        <td>{{ order.subscription_period or 'N/A' }}</td>
+                        <td>{{ order.subscription_start_date.strftime('%Y-%m-%d') if order.subscription_start_date else 'N/A' }}</td>
+                        <td>{{ order.subscription_end_date.strftime('%Y-%m-%d') if order.subscription_end_date else 'N/A' }}</td>
+                        <td>{{ order.services_per_period or 'N/A' }}</td>
+                        <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-primary edit-order" data-order-id="{{ order.id }}">Edit</a>
+                            {% if order.status != 'Completed' %}
+                            <button class="btn btn-sm btn-success complete-order" data-order-id="{{ order.id }}">Mark Complete</button>
+                            {% endif %}
+                            <button class="btn btn-sm btn-secondary print-receipt" data-order-id="{{ order.id }}">Print Receipt</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -93,12 +111,6 @@
         <div class="card-body">
             <button id="backupButton" class="btn btn-primary me-2">Backup Database</button>
             <button id="backupDownloadButton" class="btn btn-success me-2">Backup & Download Database</button>
-            
-            <hr class="my-3">
-            <div class="d-flex align-items-center mb-3">
-                <button id="migrateButton" class="btn btn-info me-2">Run Database Migration</button>
-                <span id="dbVersion" class="text-muted"></span>
-            </div>
 
             <hr class="my-3">
             <div class="alert alert-warning">
@@ -151,6 +163,16 @@
                             <label class="form-check-label">Active</label>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="is_subscriber">
+                            <label class="form-check-label">Subscriber</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subscription End Date</label>
+                        <input type="date" class="form-control" name="subscription_end_date">
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -191,6 +213,33 @@
                             <option value="Completed">Completed</option>
                             <option value="Cancelled">Cancelled</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="is_subscription">
+                            <label class="form-check-label">Subscription Order</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subscription Period</label>
+                        <select class="form-control" name="subscription_period">
+                            <option value="">None</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subscription Start Date</label>
+                        <input type="date" class="form-control" name="subscription_start_date">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subscription End Date</label>
+                        <input type="date" class="form-control" name="subscription_end_date">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Services Per Period</label>
+                        <input type="number" class="form-control" name="services_per_period">
                     </div>
                 </form>
             </div>
@@ -350,6 +399,9 @@
                 form.elements.address.value = userData.address;
                 form.elements.is_admin.checked = userData.is_admin;
                 form.elements.is_active.checked = userData.is_active;
+                form.elements.is_subscriber.checked = userData.is_subscriber;
+                form.elements.subscription_end_date.value = userData.subscription_end_date ? 
+                    new Date(userData.subscription_end_date).toISOString().split('T')[0] : '';
                 
                 modal.show();
                 
@@ -361,7 +413,9 @@
                         phone: form.elements.phone.value,
                         address: form.elements.address.value,
                         is_admin: form.elements.is_admin.checked,
-                        is_active: form.elements.is_active.checked
+                        is_active: form.elements.is_active.checked,
+                        is_subscriber: form.elements.is_subscriber.checked,
+                        subscription_end_date: form.elements.subscription_end_date.value || null
                     };
                     
                     const updateResponse = await fetch(`/api/user/${userId}`, {
@@ -403,6 +457,13 @@
                 form.elements.quantity.value = orderData.quantity;
                 form.elements.total.value = orderData.total;
                 form.elements.status.value = orderData.status;
+                form.elements.is_subscription.checked = orderData.is_subscription;
+                form.elements.subscription_period.value = orderData.subscription_period || '';
+                form.elements.subscription_start_date.value = orderData.subscription_start_date ? 
+                    new Date(orderData.subscription_start_date).toISOString().split('T')[0] : '';
+                form.elements.subscription_end_date.value = orderData.subscription_end_date ? 
+                    new Date(orderData.subscription_end_date).toISOString().split('T')[0] : '';
+                form.elements.services_per_period.value = orderData.services_per_period || '';
                 
                 modal.show();
                 
@@ -412,7 +473,13 @@
                         service_type: form.elements.service_type.value,
                         quantity: parseFloat(form.elements.quantity.value),
                         total: form.elements.total.value,
-                        status: form.elements.status.value
+                        status: form.elements.status.value,
+                        is_subscription: form.elements.is_subscription.checked,
+                        subscription_period: form.elements.subscription_period.value || null,
+                        subscription_start_date: form.elements.subscription_start_date.value || null,
+                        subscription_end_date: form.elements.subscription_end_date.value || null,
+                        services_per_period: form.elements.services_per_period.value ? 
+                            parseInt(form.elements.services_per_period.value) : null
                     };
                     
                     const updateResponse = await fetch(`/api/order/${orderId}`, {
