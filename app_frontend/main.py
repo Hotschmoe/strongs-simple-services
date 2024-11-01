@@ -14,6 +14,14 @@ import werkzeug
 from werkzeug.utils import secure_filename
 import subprocess
 from pathlib import Path
+import stripe
+from dotenv import load_dotenv
+
+# Get the parent directory of the current file's directory
+root_dir = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file in parent directory
+load_dotenv(root_dir / '.env')
 
 app = Flask(__name__)
 init_db(app)
@@ -63,9 +71,20 @@ def homepage():
 @app.route('/order-service')
 def order_service():
     if not g.user:
-        flash('Please log in to place an order.', 'warning')
         return redirect(url_for('login'))
-    return render_template('order_service.html', user=g.user, business_config=business_config)
+    
+    selected_plan = request.args.get('plan', 'oneTime')
+    stripe_public_key = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+    
+    if not stripe_public_key:
+        app.logger.error("Stripe public key not found in environment variables")
+        flash('Payment service is currently unavailable', 'error')
+        return redirect(url_for('index'))
+
+    return render_template('order_service.html', 
+                         business_config=business_config,
+                         selected_plan=selected_plan,
+                         stripe_public_key=stripe_public_key)
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -266,7 +285,11 @@ def manage_order(order_id):
             'service_type': order.service_type,
             'quantity': order.quantity,
             'total': order.total,
-            'status': order.status
+            'status': order.status,
+            'payment_status': order.payment_status,
+            'payment_method': order.payment_method,
+            'stripe_payment_intent_id': order.stripe_payment_intent_id,
+            'is_subscription_order': order.is_subscription_order
         })
     
     elif request.method == 'PUT':
@@ -275,6 +298,8 @@ def manage_order(order_id):
         order.quantity = data.get('quantity', order.quantity)
         order.total = data.get('total', order.total)
         order.status = data.get('status', order.status)
+        order.payment_status = data.get('payment_status', order.payment_status)
+        order.payment_method = data.get('payment_type', order.payment_method)
         
         db.session.commit()
         return jsonify({'success': True})
@@ -485,6 +510,165 @@ def update_business_config():
             'success': False, 
             'message': f'Failed to update configuration: {str(e)}'
         }), 500
+
+@app.route('/create-payment-intent', methods=['POST'])
+def create_payment_intent():
+    if not g.user:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    stripe_key = os.environ.get('STRIPE_SECRET_KEY')
+    app.logger.info(f"Using Stripe Key: {'exists' if stripe_key else 'missing'}")
+    
+    if not stripe_key:
+        app.logger.error("Stripe API key not found in environment variables")
+        return jsonify({'error': 'Payment service configuration error'}), 500
+    
+    stripe.api_key = stripe_key
+
+    try:
+        data = request.json
+        service_type = data.get('serviceType')
+        service_id = data.get('serviceId')
+        price = data.get('price')
+
+        if not all([service_type, service_id, price]):
+            return jsonify({'error': 'Missing required payment information'}), 400
+
+        # Create or retrieve Stripe customer
+        if not g.user.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=g.user.email,
+                metadata={'user_id': g.user.id}
+            )
+            g.user.stripe_customer_id = customer.id
+            db.session.commit()
+
+        # Create payment intent
+        intent = stripe.PaymentIntent.create(
+            amount=int(float(price) * 100),  # Convert to cents
+            currency=business_config.get('paymentSettings', {}).get('currency', 'usd'),
+            customer=g.user.stripe_customer_id,
+            metadata={
+                'service_type': service_type,
+                'service_id': service_id,
+                'user_id': g.user.id
+            }
+        )
+        
+        return jsonify({
+            'clientSecret': intent.client_secret
+        })
+    except stripe.error.StripeError as e:
+        app.logger.error(f"Stripe API error: {str(e)}")
+        return jsonify({'error': 'Payment service error'}), 400
+    except Exception as e:
+        app.logger.error(f"Payment intent creation failed: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+
+@app.route('/submit-order', methods=['POST'])
+def submit_order():
+    if not g.user:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    try:
+        data = request.json
+        service_type = data.get('serviceType')
+        service_id = data.get('serviceId')
+        payment_method = data.get('paymentMethod')
+        price = data.get('price')
+
+        if not all([service_type, service_id, payment_method, price]):
+            return jsonify({'error': 'Missing required order information'}), 400
+
+        # Create order
+        order_id = str(uuid.uuid4())
+        order = Order(
+            id=order_id,
+            user_id=g.user.id,
+            service_type=service_id,
+            quantity=1,
+            total=float(price),
+            payment_method=payment_method,
+            payment_status='pending' if payment_method == 'card' else 'paid',
+            is_subscription_order=(service_type == 'subscription')
+        )
+        db.session.add(order)
+
+        # Handle subscription
+        if service_type == 'subscription':
+            # Find subscription details from business config
+            subscription = next(
+                (s for s in business_config['services']['subscription'] 
+                 if s['name'] == service_id),
+                None
+            )
+            
+            if not subscription:
+                raise ValueError('Invalid subscription service')
+
+            g.user.subscription_status = 'active'
+            g.user.subscription_type = service_id
+            g.user.subscription_start_date = datetime.utcnow()
+            g.user.subscription_end_date = datetime.utcnow() + timedelta(days=30)
+            g.user.services_allowed = subscription['servicesPerPeriod']
+            g.user.services_used = 0
+
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'orderId': order.id
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Order submission failed: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+
+# Add this helper function for handling successful payments
+def handle_successful_payment(payment_intent):
+    try:
+        # Find the order and update its status
+        order = Order.query.filter_by(
+            stripe_payment_intent_id=payment_intent.id
+        ).first()
+        
+        if order:
+            order.payment_status = 'paid'
+            db.session.commit()
+    except Exception as e:
+        app.logger.error(f"Payment success handling failed: {str(e)}")
+
+# Add webhook handler for Stripe events
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature')
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET')
+        )
+    except ValueError as e:
+        return 'Invalid payload', 400
+    except stripe.error.SignatureVerificationError as e:
+        return 'Invalid signature', 400
+
+    if event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        handle_successful_payment(payment_intent)
+    
+    return jsonify({'received': True})
+
+# Add this new route for marking orders as paid
+@app.route('/api/order/<order_id>/mark-paid', methods=['POST'])
+def mark_order_paid(order_id):
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    order = Order.query.get_or_404(order_id)
+    order.payment_status = 'paid'
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

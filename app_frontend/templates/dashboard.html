@@ -64,6 +64,8 @@
                         <th>Quantity (kg)</th>
                         <th>Total</th>
                         <th>Status</th>
+                        <th>Payment Status</th>
+                        <th>Payment Method</th>
                         <th>Subscription</th>
                         <th>Sub. Period</th>
                         <th>Sub. Start</th>
@@ -83,6 +85,28 @@
                         <td>{{ order.quantity }}</td>
                         <td>{{ order.total }}</td>
                         <td>{{ order.status }}</td>
+                        <td>
+                            {% if order.payment_status == 'paid' %}
+                                <span class="badge bg-success">Paid</span>
+                            {% elif order.payment_status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% if order.payment_method == 'cash' %}
+                                    <button class="btn btn-sm btn-success ms-2 mark-paid" 
+                                            data-order-id="{{ order.id }}">
+                                        Mark Paid
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-danger">Unpaid</span>
+                                {% if order.payment_method == 'cash' %}
+                                    <button class="btn btn-sm btn-success ms-2 mark-paid" 
+                                            data-order-id="{{ order.id }}">
+                                        Mark Paid
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ order.payment_method|title if order.payment_method else 'N/A' }}</td>
                         <td>{{ 'Yes' if order.is_subscription else 'No' }}</td>
                         <td>{{ order.subscription_period or 'N/A' }}</td>
                         <td>{{ order.subscription_start_date.strftime('%Y-%m-%d') if order.subscription_start_date else 'N/A' }}</td>
@@ -323,6 +347,22 @@
                         <label class="form-label">Services Per Period</label>
                         <input type="number" class="form-control" name="services_per_period">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Status</label>
+                        <select class="form-control" name="payment_status">
+                            <option value="unpaid">Unpaid</option>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-control" name="payment_type">
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="transfer">Bank Transfer</option>
+                        </select>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -330,6 +370,50 @@
                 <button type="button" class="btn btn-primary" id="saveOrderButton">Save Changes</button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Add this section to the existing dashboard template -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3>Subscriptions</h3>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Services Used</th>
+                    <th>Services Allowed</th>
+                    <th>Expiry Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users if user.subscription_status != 'none' %}
+                <tr>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.subscription_type }}</td>
+                    <td>{{ user.subscription_status }}</td>
+                    <td>{{ user.services_used }}</td>
+                    <td>{{ user.services_allowed }}</td>
+                    <td>{{ user.subscription_end_date.strftime('%Y-%m-%d') if user.subscription_end_date else 'N/A' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" 
+                                onclick="cancelSubscription('{{ user.id }}')">
+                            Cancel
+                        </button>
+                        <button class="btn btn-sm btn-primary" 
+                                onclick="resetUsage('{{ user.id }}')">
+                            Reset Usage
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
@@ -890,5 +974,41 @@
             throw error;
         }
     };
+
+    async function cancelSubscription(userId) {
+        if (!confirm('Are you sure you want to cancel this subscription?')) return;
+        
+        try {
+            const response = await fetch(`/api/cancel-subscription/${userId}`, {
+                method: 'POST'
+            });
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to cancel subscription');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to cancel subscription');
+        }
+    }
+
+    async function resetUsage(userId) {
+        if (!confirm('Are you sure you want to reset the usage count?')) return;
+        
+        try {
+            const response = await fetch(`/api/reset-subscription-usage/${userId}`, {
+                method: 'POST'
+            });
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to reset usage');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to reset usage');
+        }
+    }
 </script>
 {% endblock %}

@@ -11,6 +11,14 @@
                 <p class="lead">{{ business_config['businessDescription'] }}</p>
             </div>
 
+            {% if g.user.has_active_subscription() %}
+            <div class="alert alert-info">
+                <h4>Active Subscription: {{ g.user.subscription_type }}</h4>
+                <p>Services remaining this period: {{ g.user.get_remaining_services() }}</p>
+                <p>Subscription ends: {{ g.user.subscription_end_date.strftime('%Y-%m-%d') }}</p>
+            </div>
+            {% endif %}
+
             <form id="orderForm">
                 <div class="row mb-5">
                     <div class="col-md-12">
@@ -45,17 +53,16 @@
                                     {% for service in business_config['services']['subscription'] %}
                                     <div class="col-md-4 mb-4">
                                         <div class="card service-card h-100" 
-                                             data-service="{{ service['name'].lower().replace(' ', '_') }}" 
-                                             data-price="{{ service['price'] }}"
+                                             data-service="{{ service['name'] }}"
                                              data-type="subscription"
+                                             data-price="{{ service['price'] }}"
                                              data-billing-frequency="{{ service['billingFrequency'] }}"
                                              data-services-per-period="{{ service['servicesPerPeriod'] }}">
                                             <div class="card-body">
                                                 <h5 class="card-title">{{ service['name'] }}</h5>
                                                 <p class="card-text">{{ service['description'] }}</p>
-                                                <p class="card-text mb-1">Price: ${{ service['price'] }}/{{ service['billingFrequency'] }}</p>
                                                 <p class="card-text">
-                                                    <small class="text-muted">Includes {{ service['servicesPerPeriod'] }} services per {{ service['billingFrequency'] }}</small>
+                                                    <strong>Price:</strong> ${{ service['price'] }}/{{ service['billingFrequency'] }}
                                                 </p>
                                             </div>
                                         </div>
@@ -68,23 +75,28 @@
                     </div>
                 </div>
 
-                <div class="row justify-content-center">
-                    <div class="col-md-6">
-                        <div class="mb-3" id="quantityField">
-                            <label for="quantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="quantity" min="1" value="1" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Total</label>
-                            <div id="total" class="form-control-plaintext">$0.00</div>
-                        </div>
-
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary btn-lg">Place Order</button>
-                        </div>
+                <div class="payment-section mt-4" style="display: none;">
+                    <h3>Payment Method</h3>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="cash">
+                        <label class="form-check-label" for="cashPayment">
+                            Pay with Cash (at pickup)
+                        </label>
                     </div>
+                    {% if business_config['paymentSettings']['acceptCard'] %}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="cardPayment" value="card">
+                        <label class="form-check-label" for="cardPayment">
+                            Pay with Card
+                        </label>
+                    </div>
+                    <div id="card-element" class="mb-3" style="display: none;">
+                        <!-- Stripe Elements will be inserted here -->
+                    </div>
+                    {% endif %}
                 </div>
+
+                <button type="submit" class="btn btn-primary">Place Order</button>
             </form>
 
             <div id="orderConfirmation" class="text-center mt-4" style="display: none;">
@@ -99,73 +111,117 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://js.stripe.com/v3/"></script>
 <script>
-    const form = document.getElementById('orderForm');
-    const quantity = document.getElementById('quantity');
-    const total = document.getElementById('total');
-    const orderConfirmation = document.getElementById('orderConfirmation');
-    const orderId = document.getElementById('orderId');
-    const printReceipt = document.getElementById('printReceipt');
+    const stripe = Stripe('{{ stripe_public_key }}');
+    const elements = stripe.elements();
+    const card = elements.create('card');
+    card.mount('#card-element');
 
-    let selectedService = null;
-
-    function updateTotal() {
-        if (selectedService) {
-            const price = parseFloat(selectedService.dataset.price);
-            const qty = parseFloat(quantity.value);
-            const totalPrice = price * qty;
-            total.textContent = `$${totalPrice.toFixed(2)}`;
-        } else {
-            total.textContent = '$0.00';
-        }
-    }
-
-    // Listen for clicks on any service-card
-    document.addEventListener('click', (e) => {
-        const card = e.target.closest('.service-card');
-        if (card) {
-            document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            selectedService = card;
-            updateTotal();
-        }
-    });
-
-    quantity.addEventListener('input', updateTotal);
-
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('orderForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const selectedService = document.querySelector('.service-card.selected');
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+
         if (!selectedService) {
             alert('Please select a service');
             return;
         }
-        const formData = new FormData(form);
-        formData.append('service_type', selectedService.dataset.service);
-        formData.append('quantity', quantity.value);
-        formData.append('total', total.textContent.substring(1));
+
+        if (!paymentMethod) {
+            alert('Please select a payment method');
+            return;
+        }
+
+        const serviceType = selectedService.dataset.type;
+        const serviceId = selectedService.dataset.service;
+        const price = selectedService.dataset.price;
 
         try {
-            const response = await fetch('/place_order', {
+            if (paymentMethod.value === 'card') {
+                const response = await fetch('/create-payment-intent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        serviceType,
+                        serviceId,
+                        price
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Payment intent creation failed');
+                }
+
+                const { clientSecret } = await response.json();
+
+                const { error } = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: {
+                        card: card,
+                    }
+                });
+
+                if (error) {
+                    throw new Error(error.message);
+                }
+            }
+
+            // Submit order
+            const orderResponse = await fetch('/submit-order', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    serviceType,
+                    serviceId,
+                    paymentMethod: paymentMethod.value,
+                    price
+                })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                orderConfirmation.style.display = 'block';
-                form.style.display = 'none';
-                orderId.textContent = data.order_id;
-            } else {
+            if (!orderResponse.ok) {
                 throw new Error('Failed to place order');
             }
+
+            const { orderId } = await orderResponse.json();
+            document.getElementById('orderId').textContent = orderId;
+            document.getElementById('orderConfirmation').style.display = 'block';
+            document.getElementById('orderForm').style.display = 'none';
+
         } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while placing the order. Please try again.');
+            alert(error.message || 'Failed to process order');
         }
     });
 
-    printReceipt.addEventListener('click', () => {
-        window.print();
+    // Add click handler for service cards
+    document.querySelectorAll('.service-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selected class from all cards
+            document.querySelectorAll('.service-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked card
+            this.classList.add('selected');
+            
+            // Show payment section when a service is selected
+            document.querySelector('.payment-section').style.display = 'block';
+        });
+    });
+
+    // Handle card payment element visibility
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const cardElement = document.getElementById('card-element');
+            if (this.value === 'card') {
+                cardElement.style.display = 'block';
+            } else {
+                cardElement.style.display = 'none';
+            }
+        });
     });
 </script>
 {% endblock %}

@@ -3,24 +3,55 @@
 {% block title %}User Profile - {{ business_config['businessName'] }}{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">User Profile</h1>
+<div class="container">
+    <h1 class="mb-4">User Profile</h1>
 
-<form method="POST" action="{{ url_for('profile') }}">
-    <div class="mb-3">
-        <label for="name" class="form-label">Name</label>
-        <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+    <!-- Subscription Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="card-title">Subscription Status</h3>
+            
+            {% if user.has_active_subscription() %}
+                <p class="card-text">Plan: {{ user.subscription_type }}</p>
+                <p class="card-text">Status: {{ user.subscription_status }}</p>
+                <p class="card-text">Services remaining: {{ user.get_remaining_services() }}</p>
+                <p class="card-text">Expires: {{ user.subscription_end_date.strftime('%Y-%m-%d') }}</p>
+                
+                <form method="POST" action="{{ url_for('cancel_subscription') }}" 
+                      onsubmit="return confirm('Are you sure you want to cancel your subscription?');">
+                    <button type="submit" class="btn btn-danger">Cancel Subscription</button>
+                </form>
+            {% else %}
+                <p class="card-text">You currently don't have an active subscription.</p>
+                <a href="{{ url_for('order_service', plan='subscription') }}" 
+                   class="btn btn-primary">Sign Up for a Subscription</a>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label for="phone" class="form-label">Phone Number</label>
-        <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone }}" required>
-    </div>
+    <!-- Profile Form -->
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title mb-4">Personal Information</h3>
+            <form method="POST" action="{{ url_for('profile') }}">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+                </div>
 
-    <div class="mb-3">
-        <label for="address" class="form-label">Address</label>
-        <textarea class="form-control" id="address" name="address" rows="3" required>{{ user.address }}</textarea>
-    </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone }}" required>
+                </div>
 
-    <button type="submit" class="btn btn-primary mt-3">Save Changes</button>
-</form>
+                <div class="mb-3">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea class="form-control" id="address" name="address" rows="3" required>{{ user.address }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

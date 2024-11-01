@@ -1,5 +1,6 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -13,35 +14,42 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     orders = db.relationship('Order', backref='user', lazy=True)
-    is_subscriber = db.Column(db.Boolean, default=False)
-    subscription_end_date = db.Column(db.DateTime, nullable=True)
     
+    # New subscription fields
+    stripe_customer_id = db.Column(db.String(120), unique=True, nullable=True)
+    subscription_status = db.Column(db.String(20), default='none')  # none, active, canceled, expired
+    subscription_start_date = db.Column(db.DateTime, nullable=True)
+    subscription_end_date = db.Column(db.DateTime, nullable=True)
+    subscription_type = db.Column(db.String(50), nullable=True)
+    services_allowed = db.Column(db.Integer, default=0)
+    services_used = db.Column(db.Integer, default=0)
+
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
-class SubscriptionUsage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
-    period_start = db.Column(db.DateTime, nullable=False)
-    period_end = db.Column(db.DateTime, nullable=False)
-    services_allowed = db.Column(db.Integer, nullable=False)
-    services_used = db.Column(db.Integer, default=0)
-    
+    def has_active_subscription(self):
+        return (self.subscription_status == 'active' and 
+                self.subscription_end_date and 
+                self.subscription_end_date > datetime.utcnow())
+
+    def get_remaining_services(self):
+        if not self.has_active_subscription():
+            return 0
+        return max(0, self.services_allowed - self.services_used)
+
 class Order(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    service_type = db.Column(db.String(120), nullable=False)
+    service_type = db.Column(db.String(50), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
-    total = db.Column(db.String(120), nullable=False)
-    status = db.Column(db.String(120), nullable=False)
+    total = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    payment_status = db.Column(db.String(20), default='pending')
+    payment_method = db.Column(db.String(20), nullable=True)
+    stripe_payment_intent_id = db.Column(db.String(120), nullable=True)
+    is_subscription_order = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    is_subscription = db.Column(db.Boolean, default=False)
-    subscription_period = db.Column(db.String(20), nullable=True)
-    subscription_start_date = db.Column(db.DateTime, nullable=True)
-    subscription_end_date = db.Column(db.DateTime, nullable=True)
-    services_per_period = db.Column(db.Integer, nullable=True)
-    subscription_usage = db.relationship('SubscriptionUsage', backref='order', lazy=True)

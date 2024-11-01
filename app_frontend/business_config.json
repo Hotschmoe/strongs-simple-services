@@ -2,14 +2,21 @@
     "businessName": "Fresh & Clean Laundry",
     "businessDescription": "Professional laundry and wash services",
     "about": "Fresh & Clean Laundry provides convenient and reliable laundry services. We handle your clothes with care and ensure they come back clean, fresh, and neatly folded.",
+    "paymentSettings": {
+        "acceptCash": true,
+        "acceptCard": true,
+        "currency": "usd"
+    },
     "services": {
         "oneTime": [
             {
+                "id": "standard-load",
                 "name": "Standard Loads",
                 "description": "Pickup, Wash, Fold.",
                 "price": 25
             },
             {
+                "id": "rush-load",
                 "name": "Rush Loads",
                 "description": "Pickup, Wash, Fold. in 48 hours",
                 "price": 35
@@ -17,11 +24,20 @@
         ],
         "subscription": [
             {
+                "id": "monthly-plan",
                 "name": "Monthly Wash Plan",
                 "description": "4 washes per month",
                 "price": 80,
                 "billingFrequency": "monthly",
                 "servicesPerPeriod": 4
+            },
+            {
+                "id": "large-plan",
+                "name": "Large Wash Plan",
+                "description": "6 washes per month",
+                "price": 90,
+                "billingFrequency": "monthly",
+                "servicesPerPeriod": 6
             }
         ]
     }
