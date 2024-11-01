@@ -45,6 +45,14 @@ def before_request():
 
 @app.route('/')
 def index():
+    return redirect(url_for('homepage'))
+
+@app.route('/homepage')
+def homepage():
+    return render_template('homepage.html', business_config=business_config)
+
+@app.route('/order-service')
+def order_service():
     if not g.user:
         flash('Please log in to place an order.', 'warning')
         return redirect(url_for('login'))
@@ -193,7 +201,7 @@ def qr_code():
         return redirect(url_for('index'))
     
     current_domain = request.host_url.rstrip('/')
-    order_url = f"{current_domain}/"
+    order_url = f"{current_domain}/order-service"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(order_url)

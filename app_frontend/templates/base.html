@@ -141,12 +141,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('homepage') }}">Home</a></li>
                     {% if g.user %}
                         {% if g.user.is_admin %}
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('qr_code') }}">QR Code</a></li>
                         {% endif %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Order Service</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('order_service') }}">Order Service</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Update Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
                     {% else %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ business_config['businessName'] }} - Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-3">{{ business_config['businessName'] }}</h1>
+                <p class="lead">{{ business_config['businessDescription'] }}</p>
+            </div>
+
+            <div class="row mb-5">
+                <div class="col-md-12">
+                    <h2 class="mb-4">About Us</h2>
+                    <p>{{ business_config['about'] }}</p>
+                </div>
+            </div>
+
+            <div class="row mb-5">
+                <div class="col-md-12">
+                    <h2 class="mb-4">Our Services</h2>
+                    <div class="row">
+                        {% for service in business_config['services'] %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ service['name'] }}</h5>
+                                    <p class="card-text">{{ service['description'] }}</p>
+                                    <p class="card-text">
+                                        <strong>Price:</strong> ${{ service['price'] }}
+                                        {% if service['subscription']['available'] %}
+                                        <br>
+                                        <small class="text-muted">
+                                            Subscription available: ${{ service['subscription']['monthlyPrice'] }}/month
+                                            for {{ service['subscription']['quantityPerMonth'] }} services
+                                        </small>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-5">
+                <h2 class="mb-4">Ready to Get Started?</h2>
+                <a href="{{ url_for('order_service') }}" class="btn btn-primary btn-lg">Order Service</a>
+                {% if not g.user %}
+                <p class="mt-3">
+                    <a href="{{ url_for('login') }}">Login</a> or 
+                    <a href="{{ url_for('register') }}">Register</a> to place an order
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
