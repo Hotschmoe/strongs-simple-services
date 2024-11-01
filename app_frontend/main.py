@@ -1,7 +1,7 @@
 from flask import Flask, render_template, g, redirect, url_for, request, flash, session, jsonify, send_from_directory, send_file
 import uuid
 from database import init_db
-from extensions import db
+from extensions import db, migrate
 from models import User, Order, Subscription
 import qrcode
 import io
@@ -10,9 +10,15 @@ import json
 import os
 from datetime import datetime, timedelta
 import shutil
+import werkzeug
+from werkzeug.utils import secure_filename
+from flask_migrate import upgrade, current
+import subprocess
+from pathlib import Path
 
 app = Flask(__name__)
 init_db(app)
+migrate.init_app(app, db)
 app.secret_key = 'your_secret_key'  # Replace with a real secret key
 
 # Load business configuration
@@ -358,6 +364,125 @@ def backup_and_download():
     except Exception as e:
         app.logger.error(f"Backup and download failed: {str(e)}")
         return jsonify({'error': 'Backup and download failed'}), 500
+
+@app.route('/api/restore', methods=['POST'])
+def restore_database():
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        if 'backup_file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['backup_file']
+        
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if not file.filename.endswith('.sqlite'):
+            return jsonify({'error': 'Invalid file type. Must be a .sqlite file'}), 400
+        
+        # Create a temporary directory for validation
+        temp_dir = os.path.join(app.instance_path, 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Save and validate the uploaded file
+        temp_path = os.path.join(temp_dir, 'temp_backup.sqlite')
+        file.save(temp_path)
+        
+        # Validate that this is a valid SQLite database
+        try:
+            import sqlite3
+            conn = sqlite3.connect(temp_path)
+            # Check if essential tables exist
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = [table[0] for table in cursor.fetchall()]
+            required_tables = {'user', 'order'}  # Add your essential tables here
+            if not required_tables.issubset(set(tables)):
+                raise Exception("Invalid database structure")
+            conn.close()
+        except Exception as e:
+            os.remove(temp_path)
+            return jsonify({'error': 'Invalid database file'}), 400
+        
+        # Backup the current database before replacing
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        auto_backup_filename = f'auto_backup_before_restore_{timestamp}.sqlite'
+        backup_dir = os.path.join(app.instance_path, 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        current_db_path = os.path.join(app.instance_path, 'app.sqlite')
+        shutil.copy2(current_db_path, os.path.join(backup_dir, auto_backup_filename))
+        
+        # Replace the current database with the uploaded one
+        shutil.copy2(temp_path, current_db_path)
+        
+        # Clean up
+        os.remove(temp_path)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Database restored successfully',
+            'auto_backup': auto_backup_filename
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Restore failed: {str(e)}")
+        return jsonify({'error': f'Restore failed: {str(e)}'}), 500
+
+@app.route('/api/migrate', methods=['POST'])
+def run_migration():
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # Create automatic backup before migration
+        backup_dir = os.path.join(app.instance_path, 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f'pre_migration_backup_{timestamp}.sqlite'
+        backup_path = os.path.join(backup_dir, backup_filename)
+        db_path = os.path.join(app.instance_path, 'app.sqlite')
+        shutil.copy2(db_path, backup_path)
+
+        # Run migrations
+        with app.app_context():
+            # Get current version before upgrade
+            old_version = current()
+            
+            # Run the upgrade
+            upgrade()
+            
+            # Get new version after upgrade
+            new_version = current()
+
+        message = f"Migration completed successfully.\n"
+        message += f"Previous version: {old_version or 'Initial'}\n"
+        message += f"New version: {new_version or 'Initial'}\n"
+        message += f"Backup created: {backup_filename}"
+
+        return jsonify({
+            'success': True,
+            'message': message,
+            'backup': backup_filename
+        })
+
+    except Exception as e:
+        app.logger.error(f"Migration failed: {str(e)}")
+        return jsonify({'error': f'Migration failed: {str(e)}'}), 500
+
+@app.route('/api/db-version')
+def get_db_version():
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        with app.app_context():
+            version = current()
+        return jsonify({'version': str(version) if version else 'Initial'})
+    except Exception as e:
+        app.logger.error(f"Error getting DB version: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
