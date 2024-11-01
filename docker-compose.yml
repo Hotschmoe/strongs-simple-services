@@ -19,19 +19,21 @@ services:
       # - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       # - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
 
-  ngrok:
-    image: wernight/ngrok
-    ports:
-      - "4040:4040"
-    command: ngrok http services_frontend:5000
-    environment:
-      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}  
-      # Optional additional environment variables:
-      # - NGROK_SUBDOMAIN=${NGROK_SUBDOMAIN}
-      # - NGROK_HOSTNAME=${NGROK_HOSTNAME}
-      # - NGROK_USERNAME=${NGROK_USERNAME}
-      # - NGROK_PASSWORD=${NGROK_PASSWORD}
-      # - NGROK_REGION=${NGROK_REGION}
-      # - NGROK_HEADER=${NGROK_HEADER}
-    depends_on:
-      - services_frontend
+  # ngrok:
+  #   image: wernight/ngrok
+  #   ports:
+  #     - "4040:4040"
+  #   command: ngrok http services_frontend:5000
+  #   environment:
+  #     - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}  
+  #     # Optional additional environment variables:
+  #     # - NGROK_SUBDOMAIN=${NGROK_SUBDOMAIN}
+  #     # - NGROK_HOSTNAME=${NGROK_HOSTNAME}
+  #     # - NGROK_USERNAME=${NGROK_USERNAME}
+  #     # - NGROK_PASSWORD=${NGROK_PASSWORD}
+  #     # - NGROK_REGION=${NGROK_REGION}
+  #     # - NGROK_HEADER=${NGROK_HEADER}
+  #   depends_on:
+  #     - services_frontend
+
+  # TODO: Add cloudflare tunnel option

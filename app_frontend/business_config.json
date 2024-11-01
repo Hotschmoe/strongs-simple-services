@@ -1,32 +1,27 @@
 {
-    "businessName": "Ponderosa Paintworks",
-    "businessDescription": "Cerakote coating and custom paintwork",
-    "about": "Ponderosa Paintworks specializes in high-quality Cerakote coating and custom paintwork. With years of experience and attention to detail, we deliver exceptional finishes for all your needs.",
+    "businessName": "Fresh & Clean Laundry",
+    "businessDescription": "Professional laundry and wash services",
+    "about": "Fresh & Clean Laundry provides convenient and reliable laundry services. We handle your clothes with care and ensure they come back clean, fresh, and neatly folded.",
     "services": {
         "oneTime": [
             {
-                "name": "Standard Paint",
-                "description": "Regular paint service",
-                "price": 10
+                "name": "Standard Load",
+                "description": "Regular wash, dry, and fold service",
+                "price": 25
             },
             {
-                "name": "Rush Paint",
-                "description": "Expedited paint service",
-                "price": 15
-            },
-            {
-                "name": "Cerakote",
-                "description": "Cerakote coating",
-                "price": 20
+                "name": "Rush Service",
+                "description": "Next-day wash, dry, and fold service",
+                "price": 35
             }
         ],
         "subscription": [
             {
-                "name": "Monthly Maintenance",
-                "description": "Regular maintenance and touch-ups",
-                "price": 50,
+                "name": "Monthly Laundry Plan",
+                "description": "Regular laundry service with monthly billing",
+                "price": 80,
                 "billingFrequency": "monthly",
-                "servicesPerPeriod": 3
+                "servicesPerPeriod": 4
             }
         ]
     }
