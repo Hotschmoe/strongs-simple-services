@@ -49,31 +49,38 @@
                             {% endif %}
 
                             {% if business_config['services']['subscription'] %}
+                            {% set available_subscriptions = [] %}
+                            {% for service in business_config['services']['subscription'] %}
+                                {% if not g.user.has_active_subscription_for(service['id']) %}
+                                    {% set _ = available_subscriptions.append(service) %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if available_subscriptions %}
                             <div class="col-12">
                                 <h3>Subscription Services</h3>
                                 <div class="row">
-                                    {% for service in business_config['services']['subscription'] %}
-                                        {% if not g.user.has_active_subscription_for(service['id']) %}
-                                        <div class="col-md-4 mb-4">
-                                            <div class="card service-card h-100" 
-                                                 data-service="{{ service['id'] }}"
-                                                 data-type="subscription"
-                                                 data-price="{{ service['price'] }}"
-                                                 data-billing-frequency="{{ service['billingFrequency'] }}"
-                                                 data-services-per-period="{{ service['servicesPerPeriod'] }}">
-                                                <div class="card-body">
-                                                    <h5 class="card-title">{{ service['name'] }}</h5>
-                                                    <p class="card-text">{{ service['description'] }}</p>
-                                                    <p class="card-text">
-                                                        <strong>Price:</strong> ${{ service['price'] }}/{{ service['billingFrequency'] }}
-                                                    </p>
-                                                </div>
+                                    {% for service in available_subscriptions %}
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card service-card h-100" 
+                                             data-service="{{ service['id'] }}"
+                                             data-type="subscription"
+                                             data-price="{{ service['price'] }}"
+                                             data-billing-frequency="{{ service['billingFrequency'] }}"
+                                             data-services-per-period="{{ service['servicesPerPeriod'] }}">
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ service['name'] }}</h5>
+                                                <p class="card-text">{{ service['description'] }}</p>
+                                                <p class="card-text">
+                                                    <strong>Price:</strong> ${{ service['price'] }}/{{ service['billingFrequency'] }}
+                                                </p>
                                             </div>
                                         </div>
-                                        {% endif %}
+                                    </div>
                                     {% endfor %}
                                 </div>
                             </div>
+                            {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -106,7 +113,7 @@
             <div id="orderConfirmation" class="text-center mt-4" style="display: none;">
                 <h2>Order Confirmation</h2>
                 <p>Your order has been placed successfully. Order ID: <span id="orderId"></span></p>
-                <p><strong>Payment: In-person at pickup. Online payment coming soon!</strong></p>
+                <p><strong id="paymentStatus"></strong></p>
                 <button id="printReceipt" class="btn btn-secondary">Print Receipt</button>
             </div>
         </div>
@@ -197,6 +204,10 @@
 
             // Display confirmation
             document.getElementById('orderId').textContent = orderId;
+            document.getElementById('paymentStatus').textContent = 
+                paymentMethod.value === 'card' 
+                    ? 'Payment Successful' 
+                    : 'Payment: In-person at pickup';
             document.getElementById('orderConfirmation').style.display = 'block';
             document.getElementById('orderForm').style.display = 'none';
 
