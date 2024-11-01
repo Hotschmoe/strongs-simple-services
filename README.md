@@ -50,6 +50,9 @@ This web application helps service-based businesses manage orders and subscripti
   - [ ] Static directory for favicon and images
   - [ ] Service images in business_config.json
   - [ ] About page configuration
+- [ ] User interface improvements
+  - [ ] Footer with business information and social media links
+  - [ ] Contact owner button/information on user profile page
 
 ## Payment Processing
 

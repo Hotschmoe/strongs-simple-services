@@ -49,6 +49,92 @@
         </div>
     </div>
 
+    <!-- Active Orders Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="card-title">Active Orders</h3>
+            {% if user.orders|selectattr('status', 'equalto', 'pending')|list %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Service</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Payment Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in user.orders|selectattr('status', 'equalto', 'pending')|list %}
+                                <tr>
+                                    <td>{{ order.id[:8] }}...</td>
+                                    <td>{{ order.service_type }}</td>
+                                    <td>${{ "%.2f"|format(order.total) }}</td>
+                                    <td><span class="badge bg-warning">{{ order.status }}</span></td>
+                                    <td><span class="badge bg-{{ 'success' if order.payment_status == 'paid' else 'warning' }}">
+                                        {{ order.payment_status }}
+                                    </span></td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <p class="mb-0">You have no active orders.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Order History Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="card-title">Order History</h3>
+            {% if user.orders|selectattr('status', 'equalto', 'completed')|list %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Service</th>
+                                <th>Total</th>
+                                <th>Payment Method</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in user.orders|selectattr('status', 'equalto', 'completed')|list %}
+                                <tr>
+                                    <td>{{ order.id[:8] }}...</td>
+                                    <td>{{ order.service_type }}</td>
+                                    <td>${{ "%.2f"|format(order.total) }}</td>
+                                    <td>{{ order.payment_method|title }}</td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('print_receipt', order_id=order.id) }}" 
+                                           target="_blank" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-print"></i> Receipt
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <p class="mb-0">You have no completed orders.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Profile Form -->
     <div class="card">
         <div class="card-body">
