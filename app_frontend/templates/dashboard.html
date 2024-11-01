@@ -82,8 +82,8 @@
                             <td>{{ order.service_type }}</td>
                             <td>{{ order.quantity }}</td>
                             <td>{{ order.total }}</td>
-                            <td>{{ order.status }}</td>
-                            <td>{{ order.payment_status }}</td>
+                            <td><span class="badge bg-{{ 'success' if order.status == 'Completed' else 'warning' }}">{{ order.status }}</span></td>
+                            <td><span class="badge bg-{{ 'success' if order.payment_status == 'paid' else 'warning' }}">{{ order.payment_status }}</span></td>
                             <td>{{ order.payment_method }}</td>
                             <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
@@ -126,8 +126,8 @@
                             <td>{{ order.service_type }}</td>
                             <td>{{ order.quantity }}</td>
                             <td>{{ order.total }}</td>
-                            <td>{{ order.status }}</td>
-                            <td>{{ order.payment_status }}</td>
+                            <td><span class="badge bg-{{ 'success' if order.status == 'Completed' else 'warning' }}">{{ order.status }}</span></td>
+                            <td><span class="badge bg-{{ 'success' if order.payment_status == 'paid' else 'warning' }}">{{ order.payment_status }}</span></td>
                             <td>{{ order.payment_method }}</td>
                             <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
@@ -243,19 +243,19 @@
                     <form id="editUserForm">
                         <div class="mb-3">
                             <label class="form-label">Name</label>
-                            <input type="text" class="form-control" name="name">
+                            <input type="text" class="form-control" name="name" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email">
+                            <input type="email" class="form-control" name="email" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Phone</label>
-                            <input type="tel" class="form-control" name="phone">
+                            <input type="tel" class="form-control" name="phone" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Address</label>
-                            <input type="text" class="form-control" name="address">
+                            <input type="text" class="form-control" name="address" required>
                         </div>
                         <div class="mb-3">
                             <div class="form-check">
@@ -268,16 +268,6 @@
                                 <input type="checkbox" class="form-check-input" name="is_active">
                                 <label class="form-check-label">Active</label>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="is_subscriber">
-                                <label class="form-check-label">Subscriber</label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Subscription End Date</label>
-                            <input type="date" class="form-control" name="subscription_end_date">
                         </div>
                     </form>
                 </div>
@@ -301,55 +291,28 @@
                     <form id="editOrderForm">
                         <div class="mb-3">
                             <label class="form-label">Service Type</label>
-                            <input type="text" class="form-control" name="service_type">
+                            <input type="text" class="form-control" name="service_type" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Quantity (kg)</label>
-                            <input type="number" step="0.1" class="form-control" name="quantity">
+                            <input type="number" step="0.1" class="form-control" name="quantity" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Total</label>
-                            <input type="text" class="form-control" name="total">
+                            <input type="number" step="0.01" class="form-control" name="total" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Status</label>
-                            <select class="form-control" name="status">
-                                <option value="Pending">Pending</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Completed">Completed</option>
-                                <option value="Cancelled">Cancelled</option>
+                            <select class="form-control" name="status" required>
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
                             </select>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="is_subscription">
-                                <label class="form-check-label">Subscription Order</label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Subscription Period</label>
-                            <select class="form-control" name="subscription_period">
-                                <option value="">None</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
-                                <option value="yearly">Yearly</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Subscription Start Date</label>
-                            <input type="date" class="form-control" name="subscription_start_date">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Subscription End Date</label>
-                            <input type="date" class="form-control" name="subscription_end_date">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Services Per Period</label>
-                            <input type="number" class="form-control" name="services_per_period">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Payment Status</label>
-                            <select class="form-control" name="payment_status">
+                            <select class="form-control" name="payment_status" required>
                                 <option value="unpaid">Unpaid</option>
                                 <option value="pending">Pending</option>
                                 <option value="paid">Paid</option>
@@ -357,11 +320,17 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Payment Method</label>
-                            <select class="form-control" name="payment_type">
+                            <select class="form-control" name="payment_method">
                                 <option value="cash">Cash</option>
                                 <option value="card">Card</option>
                                 <option value="transfer">Bank Transfer</option>
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_subscription_order">
+                                <label class="form-check-label">Subscription Order</label>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -522,9 +491,6 @@
                 form.elements.address.value = userData.address;
                 form.elements.is_admin.checked = userData.is_admin;
                 form.elements.is_active.checked = userData.is_active;
-                form.elements.is_subscriber.checked = userData.is_subscriber;
-                form.elements.subscription_end_date.value = userData.subscription_end_date ? 
-                    new Date(userData.subscription_end_date).toISOString().split('T')[0] : '';
                 
                 modal.show();
                 
@@ -536,9 +502,7 @@
                         phone: form.elements.phone.value,
                         address: form.elements.address.value,
                         is_admin: form.elements.is_admin.checked,
-                        is_active: form.elements.is_active.checked,
-                        is_subscriber: form.elements.is_subscriber.checked,
-                        subscription_end_date: form.elements.subscription_end_date.value || null
+                        is_active: form.elements.is_active.checked
                     };
                     
                     const updateResponse = await fetch(`/api/user/${userId}`, {
@@ -580,13 +544,9 @@
                 form.elements.quantity.value = orderData.quantity;
                 form.elements.total.value = orderData.total;
                 form.elements.status.value = orderData.status;
-                form.elements.is_subscription.checked = orderData.is_subscription;
-                form.elements.subscription_period.value = orderData.subscription_period || '';
-                form.elements.subscription_start_date.value = orderData.subscription_start_date ? 
-                    new Date(orderData.subscription_start_date).toISOString().split('T')[0] : '';
-                form.elements.subscription_end_date.value = orderData.subscription_end_date ? 
-                    new Date(orderData.subscription_end_date).toISOString().split('T')[0] : '';
-                form.elements.services_per_period.value = orderData.services_per_period || '';
+                form.elements.payment_status.value = orderData.payment_status;
+                form.elements.payment_method.value = orderData.payment_method;
+                form.elements.is_subscription_order.checked = orderData.is_subscription_order;
                 
                 modal.show();
                 
@@ -597,12 +557,9 @@
                         quantity: parseFloat(form.elements.quantity.value),
                         total: form.elements.total.value,
                         status: form.elements.status.value,
-                        is_subscription: form.elements.is_subscription.checked,
-                        subscription_period: form.elements.subscription_period.value || null,
-                        subscription_start_date: form.elements.subscription_start_date.value || null,
-                        subscription_end_date: form.elements.subscription_end_date.value || null,
-                        services_per_period: form.elements.services_per_period.value ? 
-                            parseInt(form.elements.services_per_period.value) : null
+                        payment_status: form.elements.payment_status.value,
+                        payment_method: form.elements.payment_method.value,
+                        is_subscription_order: form.elements.is_subscription_order.checked
                     };
                     
                     const updateResponse = await fetch(`/api/order/${orderId}`, {
