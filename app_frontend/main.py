@@ -107,7 +107,12 @@ def profile():
         flash('Profile updated successfully.', 'success')
         return redirect(url_for('profile'))
 
-    return render_template('profile.html', user=g.user, business_config=business_config)
+    # Add current datetime for subscription comparison
+    now = datetime.utcnow()
+    return render_template('profile.html', 
+                         user=g.user, 
+                         business_config=business_config,
+                         now=now)
 
 @app.route('/dashboard')
 def dashboard():
