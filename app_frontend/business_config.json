@@ -10,16 +10,16 @@
                 "price": 25
             },
             {
-                "name": "Rush Service",
-                "description": "Next-day wash, dry, and fold service",
-                "price": 35
+                "name": "Rush Job",
+                "description": "Stanard Load, within 48 hours.",
+                "price": 55
             }
         ],
         "subscription": [
             {
                 "name": "Monthly Laundry Plan",
                 "description": "Regular laundry service with monthly billing",
-                "price": 80,
+                "price": 120,
                 "billingFrequency": "monthly",
                 "servicesPerPeriod": 4
             }

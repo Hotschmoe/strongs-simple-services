@@ -1,6 +1,7 @@
 from flask import Flask, render_template, g, redirect, url_for, request, flash, session, jsonify, send_from_directory, send_file
 import uuid
 from database import init_db
+from extensions import db
 from models import User, Order
 import qrcode
 import io
@@ -395,6 +396,44 @@ def restore_database():
     except Exception as e:
         app.logger.error(f"Restore failed: {str(e)}")
         return jsonify({'error': f'Restore failed: {str(e)}'}), 500
+
+@app.route('/api/update-business-config', methods=['POST'])
+def update_business_config():
+    if not g.user or not g.user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    try:
+        new_config = request.json
+        
+        # Validate the data structure
+        required_fields = ['businessName', 'businessDescription', 'about', 'services']
+        if not all(key in new_config for key in required_fields):
+            return jsonify({'success': False, 'message': 'Missing required fields'}), 400
+            
+        # Validate services structure
+        if not isinstance(new_config['services'], dict) or \
+           not all(key in new_config['services'] for key in ['oneTime', 'subscription']):
+            return jsonify({'success': False, 'message': 'Invalid services structure'}), 400
+            
+        # Save the new configuration
+        config_path = os.environ.get('BUSINESS_CONFIG_PATH', '/app/business_config.json')
+        with open(config_path, 'w') as f:
+            json.dump(new_config, f, indent=4)
+            
+        # Update the global business_config variable
+        global business_config
+        business_config = new_config
+            
+        return jsonify({
+            'success': True, 
+            'message': 'Configuration updated successfully'
+        })
+    except Exception as e:
+        app.logger.error(f"Failed to update business config: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'message': f'Failed to update configuration: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
