@@ -211,23 +211,97 @@
             const orderId = e.target.dataset.orderId;
             try {
                 const response = await fetch(`/api/order/${orderId}/receipt`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch receipt data');
+                }
                 const receiptData = await response.json();
                 
-                // Create a new window with receipt content
+                // Create a new window with styled receipt content
                 const receiptWindow = window.open('', '_blank');
+                if (!receiptWindow) {
+                    alert('Please allow pop-ups to print receipts');
+                    return;
+                }
+
                 receiptWindow.document.write(`
-                    <h2>${business_config.businessName} - Receipt</h2>
-                    <p>Order ID: ${receiptData.order_id}</p>
-                    <p>Customer: ${receiptData.customer}</p>
-                    <p>Service: ${receiptData.service_type}</p>
-                    <p>Quantity: ${receiptData.quantity} kg</p>
-                    <p>Total: ${receiptData.total}</p>
-                    <p>Date: ${receiptData.date}</p>
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Receipt - Order #${receiptData.order_id}</title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                max-width: 400px;
+                                margin: 20px auto;
+                                padding: 20px;
+                            }
+                            .receipt-header {
+                                text-align: center;
+                                margin-bottom: 20px;
+                            }
+                            .receipt-item {
+                                margin: 10px 0;
+                                display: flex;
+                                justify-content: space-between;
+                            }
+                            .receipt-total {
+                                margin-top: 20px;
+                                border-top: 2px solid #000;
+                                padding-top: 10px;
+                                font-weight: bold;
+                            }
+                            @media print {
+                                body {
+                                    margin: 0;
+                                    padding: 10px;
+                                }
+                                .no-print {
+                                    display: none;
+                                }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="receipt-header">
+                            <h2>${receiptData.business_name}</h2>
+                            <p>Receipt</p>
+                        </div>
+                        
+                        <div class="receipt-item">
+                            <span>Order ID:</span>
+                            <span>#${receiptData.order_id}</span>
+                        </div>
+                        <div class="receipt-item">
+                            <span>Customer:</span>
+                            <span>${receiptData.customer}</span>
+                        </div>
+                        <div class="receipt-item">
+                            <span>Service:</span>
+                            <span>${receiptData.service_type}</span>
+                        </div>
+                        <div class="receipt-item">
+                            <span>Quantity:</span>
+                            <span>${receiptData.quantity} kg</span>
+                        </div>
+                        <div class="receipt-total">
+                            <span>Total:</span>
+                            <span>${receiptData.total}</span>
+                        </div>
+                        <div class="receipt-item">
+                            <span>Date:</span>
+                            <span>${receiptData.date}</span>
+                        </div>
+                        
+                        <div class="no-print" style="text-align: center; margin-top: 30px;">
+                            <button onclick="window.print()">Print Receipt</button>
+                        </div>
+                    </body>
+                    </html>
                 `);
-                receiptWindow.print();
+                receiptWindow.document.close();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to generate receipt');
+                alert('Failed to generate receipt: ' + error.message);
             }
         });
     });

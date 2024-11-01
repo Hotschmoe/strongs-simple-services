@@ -243,7 +243,8 @@ def get_receipt(order_id):
         'service_type': order.service_type,
         'quantity': order.quantity,
         'total': order.total,
-        'date': order.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        'date': order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        'business_name': business_config['businessName']
     }
     
     return jsonify(receipt_data)
