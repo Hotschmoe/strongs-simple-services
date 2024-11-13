@@ -633,6 +633,16 @@ def submit_order():
         service_id = data.get('serviceId')
         payment_method = data.get('paymentMethod')
         price = data.get('price')
+        
+        # Get service options
+        service_options = {}
+        for category in business_config['serviceOptions']['categories']:
+            option_name = data.get(f"option_{category['categoryName']}")
+            if option_name:
+                service_options[category['categoryName']] = option_name
+        
+        # Get special requests/comments
+        requests_comments = data.get('requestsComments', '')
 
         app.logger.debug(f"Order submission - Service Type: {service_type}, Service ID: {service_id}")
         app.logger.debug(f"Available subscription services: {business_config['services'].get('subscription', [])}")
@@ -667,7 +677,9 @@ def submit_order():
             total=float(price),
             payment_method=payment_method,
             payment_status='pending' if payment_method == 'card' else 'unpaid',
-            is_subscription_order=(service_type == 'subscription')
+            is_subscription_order=(service_type == 'subscription'),
+            service_options=json.dumps(service_options),
+            requests_comments=requests_comments
         )
         db.session.add(order)
 

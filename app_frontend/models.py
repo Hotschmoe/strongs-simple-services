@@ -127,3 +127,5 @@ class Order(db.Model):
     is_subscription_order = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    service_options = db.Column(db.Text, nullable=True)  # JSON string of selected options
+    requests_comments = db.Column(db.Text, nullable=True)

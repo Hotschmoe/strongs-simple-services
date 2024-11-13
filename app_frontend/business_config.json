@@ -41,5 +41,116 @@
                 "id": "large-wash-plan"
             }
         ]
+    },
+    "serviceOptions": {
+        "categories": [
+            {
+                "categoryName": "Detergents",
+                "options": [
+                    {
+                        "name": "EOS Hypoallergenic Liquid Laundry Detergent + Enzymes - Lavender Scent",
+                        "additionalCost": 0.00
+                    },
+                    {
+                        "name": "Persil OXI + Odor Power Liquid Laundry Detergent",
+                        "additionalCost": 0.00
+                    },
+                    {
+                        "name": "Member’S Mark Liquid Laundry Detergent - Fresh Scent",
+                        "additionalCost": 0.00
+                    },
+                    {
+                        "name": "Tide Liquid Laundry Detergent - Original Scent",
+                        "additionalCost": 0.00
+                    }
+                ]
+            },
+            {
+                "categoryName": "Clean Detergents",
+                "options": [
+                    {
+                        "name": "Molly Suds Laundry Powder - Unscented",
+                        "additionalCost": 1.00
+                    },
+                    {
+                        "name": "Molly Suds Laundry Powder - Peppermint",
+                        "additionalCost": 1.00
+                    }
+                ]
+            },
+            {
+                "categoryName": "Stain Removers",
+                "options": [
+                    {
+                        "name": "None",
+                        "additionalCost": 0.00
+                    },
+                    {
+                        "name": "Oxy Clean",
+                        "additionalCost": 1.00
+                    },
+                    {
+                        "name": "Shout",
+                        "additionalCost": 1.00
+                    },
+                    {
+                        "name": "Clorox 2 - Colors",
+                        "additionalCost": 1.00
+                    }
+                ]
+            },
+            {
+                "categoryName": "Scent Boosters",
+                "options": [
+                    {
+                        "name": "None",
+                        "additionalCost": 0.00
+                    },
+                    {
+                        "name": "Ocean mist",
+                        "additionalCost": 1.00
+                    },
+                    {
+                        "name": "Whimsical wonder",
+                        "additionalCost": 1.00
+                    },
+                    {
+                        "name": "Fresh frais",
+                        "additionalCost": 1.00
+                    }
+                ]
+            },
+            {
+                "categoryName": "Drying",
+                "options": [
+                    {
+                        "name": "None",
+                        "additionalCost": 0.00
+                    },
+                    {
+                        "name": "Bounce Dryer Sheets - Outdoor Fresh",
+                        "additionalCost": 0.00
+                    },
+                    {
+                        "name": "Wool Dryer Balls - No Scent",
+                        "additionalCost": 0.00
+                    }
+                ]
+            },
+            {
+                "categoryName": "Shirts",
+                "options": [
+                    {
+                        "name": "Laid Out",
+                        "additionalCost": 0.00
+                    },
+                    {
+                        "name": "Folded",
+                        "additionalCost": 0.00
+                    }
+                ]
+            }
+        ],
+        "requestsComments": ""
     }
 }

@@ -88,6 +88,47 @@
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm mb-4" id="addSubscriptionService">Add Subscription Service</button>
 
+                <h4 class="mt-4">Service Options</h4>
+                <div class="card mb-4 p-3">
+                    <div id="serviceOptions">
+                        {% for category in business_config['serviceOptions']['categories'] %}
+                        {% set outer_loop = loop %}
+                        <div class="category-item mb-4">
+                            <div class="mb-2">
+                                <label class="form-label h5">Category Name</label>
+                                <input type="text" class="form-control form-control-lg" 
+                                       name="serviceOptions[{{ loop.index0 }}][categoryName]" 
+                                       value="{{ category['categoryName'] }}">
+                            </div>
+                            <div class="options-list">
+                                {% for option in category['options'] %}
+                                <div class="option-item mb-2">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <input type="text" class="form-control" 
+                                                   name="serviceOptions[{{ outer_loop.index0 }}][options][{{ loop.index0 }}][name]" 
+                                                   value="{{ option['name'] }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="number" class="form-control" step="0.01"
+                                                   name="serviceOptions[{{ outer_loop.index0 }}][options][{{ loop.index0 }}][additionalCost]" 
+                                                   value="{{ option['additionalCost'] }}">
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm add-option mt-2">Add Option</button>
+                            <button type="button" class="btn btn-danger btn-sm remove-category mt-2">Remove Category</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm mt-3" id="addCategory">Add Category</button>
+                </div>
+
                 <div class="mt-4">
                     <button type="submit" class="btn btn-primary">Save Configuration</button>
                 </div>
@@ -145,6 +186,10 @@
                 services: {
                     oneTime: [],
                     subscription: []
+                },
+                serviceOptions: {
+                    categories: [],
+                    requestsComments: ""
                 }
             };
 
@@ -181,6 +226,29 @@
                 }
 
                 formData.services.subscription.push(service);
+            });
+
+            // Gather service options
+            document.querySelectorAll('#serviceOptions .category-item').forEach((category, categoryIndex) => {
+                const categoryData = {
+                    categoryName: category.querySelector('h5').textContent,
+                    options: []
+                };
+
+                category.querySelectorAll('.option-item').forEach(option => {
+                    const optionData = {
+                        name: option.querySelector('[name$="[name]"]').value.trim(),
+                        additionalCost: parseFloat(option.querySelector('[name$="[additionalCost]"]').value)
+                    };
+
+                    if (!optionData.name) {
+                        throw new Error('All option names are required');
+                    }
+
+                    categoryData.options.push(optionData);
+                });
+
+                formData.serviceOptions.categories.push(categoryData);
             });
 
             const response = await fetch('/api/update-business-config', {
@@ -295,6 +363,94 @@
         if (e.target.classList.contains('remove-service')) {
             if (confirm('Are you sure you want to remove this service?')) {
                 e.target.closest('.service-item').remove();
+            }
+        }
+    });
+
+    // Add new category
+    document.getElementById('addCategory').addEventListener('click', () => {
+        const container = document.getElementById('serviceOptions');
+        const newIndex = container.children.length;
+        
+        const categoryHTML = `
+            <div class="category-item mb-4">
+                <div class="mb-2">
+                    <label class="form-label h5">Category Name</label>
+                    <input type="text" class="form-control form-control-lg" 
+                           name="serviceOptions[${newIndex}][categoryName]" 
+                           value="">
+                </div>
+                <div class="options-list">
+                    <div class="option-item mb-2">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" 
+                                       name="serviceOptions[${newIndex}][options][0][name]" 
+                                       value="">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" step="0.01"
+                                       name="serviceOptions[${newIndex}][options][0][additionalCost]" 
+                                       value="0">
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm add-option mt-2">Add Option</button>
+                <button type="button" class="btn btn-danger btn-sm remove-category mt-2">Remove Category</button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', categoryHTML);
+    });
+
+    // Add new option
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('add-option')) {
+            const categoryItem = e.target.closest('.category-item');
+            const categoryIndex = Array.from(categoryItem.parentNode.children).indexOf(categoryItem);
+            const optionsList = categoryItem.querySelector('.options-list');
+            const newOptionIndex = optionsList.children.length;
+            
+            const optionHTML = `
+                <div class="option-item mb-2">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" 
+                                   name="serviceOptions[${categoryIndex}][options][${newOptionIndex}][name]" 
+                                   value="">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" class="form-control" step="0.01"
+                                   name="serviceOptions[${categoryIndex}][options][${newOptionIndex}][additionalCost]" 
+                                   value="0">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            optionsList.insertAdjacentHTML('beforeend', optionHTML);
+        }
+    });
+
+    // Remove option
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-option')) {
+            if (confirm('Are you sure you want to remove this option?')) {
+                e.target.closest('.option-item').remove();
+            }
+        }
+    });
+
+    // Remove category
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-category')) {
+            if (confirm('Are you sure you want to remove this category and all its options?')) {
+                e.target.closest('.category-item').remove();
             }
         }
     });
