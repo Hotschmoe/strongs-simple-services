@@ -251,6 +251,13 @@ def get_receipt(order_id):
     if not g.user.is_admin and order.user_id != g.user.id:
         return jsonify({'error': 'Unauthorized'}), 403
     
+    # Parse service options if they exist
+    service_options_html = ""
+    if order.service_options:
+        options = json.loads(order.service_options)
+        for category, option in options.items():
+            service_options_html += f"<div class='receipt-item'><span>{category}:</span><span>{option}</span></div>"
+    
     receipt_data = {
         'order_id': order.id,
         'customer': order.user.name,
@@ -258,7 +265,9 @@ def get_receipt(order_id):
         'quantity': order.quantity,
         'total': order.total,
         'date': order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-        'business_name': business_config['businessName']
+        'business_name': business_config['businessName'],
+        'service_options': service_options_html,
+        'requests_comments': order.requests_comments
     }
     
     return jsonify(receipt_data)
@@ -301,6 +310,7 @@ def manage_order(order_id):
     order = Order.query.get_or_404(order_id)
     
     if request.method == 'GET':
+        service_options = json.loads(order.service_options) if order.service_options else {}
         return jsonify({
             'id': order.id,
             'service_type': order.service_type,
@@ -310,7 +320,9 @@ def manage_order(order_id):
             'payment_status': order.payment_status,
             'payment_method': order.payment_method,
             'stripe_payment_intent_id': order.stripe_payment_intent_id,
-            'is_subscription_order': order.is_subscription_order
+            'is_subscription_order': order.is_subscription_order,
+            'service_options': service_options,
+            'requests_comments': order.requests_comments
         })
     
     elif request.method == 'PUT':
@@ -320,7 +332,12 @@ def manage_order(order_id):
         order.total = data.get('total', order.total)
         order.status = data.get('status', order.status)
         order.payment_status = data.get('payment_status', order.payment_status)
-        order.payment_method = data.get('payment_type', order.payment_method)
+        order.payment_method = data.get('payment_method', order.payment_method)
+        
+        if 'service_options' in data:
+            order.service_options = json.dumps(data['service_options'])
+        if 'requests_comments' in data:
+            order.requests_comments = data['requests_comments']
         
         db.session.commit()
         return jsonify({'success': True})
@@ -541,8 +558,6 @@ def create_payment_intent():
         return jsonify({'error': 'User not authenticated'}), 401
 
     stripe_key = os.environ.get('STRIPE_SECRET_KEY')
-    app.logger.info(f"Using Stripe Key: {'exists' if stripe_key else 'missing'}")
-    
     if not stripe_key:
         app.logger.error("Stripe API key not found in environment variables")
         return jsonify({'error': 'Payment service configuration error'}), 500
@@ -554,6 +569,8 @@ def create_payment_intent():
         service_type = data.get('serviceType')
         service_id = data.get('serviceId')
         price = data.get('price')
+        service_options = data.get('serviceOptions', {})
+        requests_comments = data.get('requestsComments', '')
 
         if not all([service_type, service_id, price]):
             return jsonify({'error': 'Missing required payment information'}), 400
@@ -568,10 +585,12 @@ def create_payment_intent():
             total=float(price),
             payment_method='card',
             payment_status='pending',
-            is_subscription_order=(service_type == 'subscription')
+            is_subscription_order=(service_type == 'subscription'),
+            service_options=json.dumps(service_options),
+            requests_comments=requests_comments
         )
         db.session.add(order)
-
+        
         # If it's a subscription order, prepare the subscription
         if service_type == 'subscription':
             subscription_config = next(
