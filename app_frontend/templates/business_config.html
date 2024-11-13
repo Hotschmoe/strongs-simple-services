@@ -231,7 +231,7 @@
             // Gather service options
             document.querySelectorAll('#serviceOptions .category-item').forEach((category, categoryIndex) => {
                 const categoryData = {
-                    categoryName: category.querySelector('h5').textContent,
+                    categoryName: category.querySelector('input[name$="[categoryName]"]').value.trim(),
                     options: []
                 };
 

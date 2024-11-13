@@ -49,32 +49,27 @@
                 "options": [
                     {
                         "name": "EOS Hypoallergenic Liquid Laundry Detergent + Enzymes - Lavender Scent",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     },
                     {
                         "name": "Persil OXI + Odor Power Liquid Laundry Detergent",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     },
                     {
-                        "name": "Member’S Mark Liquid Laundry Detergent - Fresh Scent",
-                        "additionalCost": 0.00
+                        "name": "Member\u2019S Mark Liquid Laundry Detergent - Fresh Scent",
+                        "additionalCost": 0
                     },
                     {
                         "name": "Tide Liquid Laundry Detergent - Original Scent",
-                        "additionalCost": 0.00
-                    }
-                ]
-            },
-            {
-                "categoryName": "Clean Detergents",
-                "options": [
+                        "additionalCost": 0
+                    },
                     {
                         "name": "Molly Suds Laundry Powder - Unscented",
-                        "additionalCost": 1.00
+                        "additionalCost": 1
                     },
                     {
                         "name": "Molly Suds Laundry Powder - Peppermint",
-                        "additionalCost": 1.00
+                        "additionalCost": 1
                     }
                 ]
             },
@@ -83,19 +78,19 @@
                 "options": [
                     {
                         "name": "None",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     },
                     {
                         "name": "Oxy Clean",
-                        "additionalCost": 1.00
+                        "additionalCost": 1
                     },
                     {
                         "name": "Shout",
-                        "additionalCost": 1.00
+                        "additionalCost": 1
                     },
                     {
                         "name": "Clorox 2 - Colors",
-                        "additionalCost": 1.00
+                        "additionalCost": 1
                     }
                 ]
             },
@@ -104,19 +99,19 @@
                 "options": [
                     {
                         "name": "None",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     },
                     {
                         "name": "Ocean mist",
-                        "additionalCost": 1.00
+                        "additionalCost": 1
                     },
                     {
                         "name": "Whimsical wonder",
-                        "additionalCost": 1.00
+                        "additionalCost": 1
                     },
                     {
                         "name": "Fresh frais",
-                        "additionalCost": 1.00
+                        "additionalCost": 1
                     }
                 ]
             },
@@ -125,15 +120,15 @@
                 "options": [
                     {
                         "name": "None",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     },
                     {
                         "name": "Bounce Dryer Sheets - Outdoor Fresh",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     },
                     {
                         "name": "Wool Dryer Balls - No Scent",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     }
                 ]
             },
@@ -142,11 +137,11 @@
                 "options": [
                     {
                         "name": "Laid Out",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     },
                     {
                         "name": "Folded",
-                        "additionalCost": 0.00
+                        "additionalCost": 0
                     }
                 ]
             }

@@ -91,6 +91,40 @@
                     </div>
                 </div>
 
+                <div id="serviceOptionsSection" class="mt-4" style="display: none;">
+                    <h4>Service Options</h4>
+                    <div class="card p-4">
+                        {% for category in business_config['serviceOptions']['categories'] %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ category['categoryName'] }}</label>
+                            <select class="form-control service-option" 
+                                    name="option_{{ category['categoryName'] }}" 
+                                    data-category="{{ category['categoryName'] }}">
+                                {% for option in category['options'] %}
+                                <option value="{{ option['name'] }}" 
+                                        data-cost="{{ option['additionalCost'] }}">
+                                    {{ option['name'] }}
+                                    {% if option['additionalCost'] > 0 %}
+                                        (+${{ "%.2f"|format(option['additionalCost']) }})
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Special Requests/Comments</label>
+                            <textarea class="form-control" name="requestsComments" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Total Price</label>
+                            <div class="h4">$<span id="totalPrice">0.00</span></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="payment-section mt-4" style="display: none;">
                     <h3>Payment Method</h3>
                     <div class="form-check mb-3">
@@ -144,6 +178,42 @@
 </script>
 {% endif %}
 <script>
+    const serviceOptionsSection = document.getElementById('serviceOptionsSection');
+    const serviceOptions = document.querySelectorAll('.service-option');
+    let basePrice = 0;
+
+    document.querySelectorAll('.service-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.service-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            this.classList.add('selected');
+            
+            serviceOptionsSection.style.display = 'block';
+            document.querySelector('.payment-section').style.display = 'block';
+
+            basePrice = parseFloat(this.dataset.price);
+            updateTotalPrice();
+        });
+    });
+
+    function updateTotalPrice() {
+        let total = basePrice;
+        
+        serviceOptions.forEach(select => {
+            const selectedOption = select.options[select.selectedIndex];
+            const additionalCost = parseFloat(selectedOption.dataset.cost) || 0;
+            total += additionalCost;
+        });
+        
+        document.getElementById('totalPrice').textContent = total.toFixed(2);
+    }
+
+    serviceOptions.forEach(select => {
+        select.addEventListener('change', updateTotalPrice);
+    });
+
     document.getElementById('orderForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const selectedService = document.querySelector('.service-card.selected');
@@ -154,28 +224,30 @@
             return;
         }
 
-        // Show the loading spinner
-        document.getElementById('loadingSpinner').style.display = 'block';
+        const selectedOptions = {};
+        serviceOptions.forEach(select => {
+            selectedOptions[select.dataset.category] = select.value;
+        });
 
-        const serviceType = selectedService.dataset.type;
-        const serviceId = selectedService.dataset.service;
-        const price = selectedService.dataset.price;
+        const orderData = {
+            serviceType: selectedService.dataset.type,
+            serviceId: selectedService.dataset.service,
+            paymentMethod: paymentMethod.value,
+            price: document.getElementById('totalPrice').textContent,
+            serviceOptions: selectedOptions,
+            requestsComments: document.querySelector('[name="requestsComments"]').value
+        };
+
+        document.getElementById('loadingSpinner').style.display = 'block';
 
         try {
             let orderId;
 
             if (paymentMethod.value === 'card') {
-                // For card payments, create payment intent first (which creates the order)
                 const response = await fetch('/create-payment-intent', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        serviceType,
-                        serviceId,
-                        price
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
                 });
 
                 if (!response.ok) {
@@ -195,18 +267,10 @@
                     throw new Error(error.message);
                 }
             } else {
-                // For cash payments, create order directly
                 const orderResponse = await fetch('/submit-order', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        serviceType,
-                        serviceId,
-                        paymentMethod: paymentMethod.value,
-                        price
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
                 });
 
                 if (!orderResponse.ok) {
@@ -217,10 +281,8 @@
                 orderId = response.orderId;
             }
 
-            // Hide the loading spinner
             document.getElementById('loadingSpinner').style.display = 'none';
 
-            // Display confirmation
             document.getElementById('orderId').textContent = orderId;
             document.getElementById('paymentStatus').textContent = 
                 paymentMethod.value === 'card' 
@@ -230,41 +292,11 @@
             document.getElementById('orderForm').style.display = 'none';
 
         } catch (error) {
-            // Hide the loading spinner in case of error
             document.getElementById('loadingSpinner').style.display = 'none';
             alert(error.message || 'Failed to process order');
         }
     });
 
-    // Add click handler for service cards
-    document.querySelectorAll('.service-card').forEach(card => {
-        card.addEventListener('click', function() {
-            // Remove selected class from all cards
-            document.querySelectorAll('.service-card').forEach(c => {
-                c.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked card
-            this.classList.add('selected');
-            
-            // Show payment section when a service is selected
-            document.querySelector('.payment-section').style.display = 'block';
-        });
-    });
-
-    // Handle card payment element visibility
-    document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
-        input.addEventListener('change', function() {
-            const cardElement = document.getElementById('card-element');
-            if (this.value === 'card') {
-                cardElement.style.display = 'block';
-            } else {
-                cardElement.style.display = 'none';
-            }
-        });
-    });
-
-    // Add this new event listener for the print receipt button
     document.getElementById('printReceipt').addEventListener('click', async () => {
         const orderId = document.getElementById('orderId').textContent;
         try {
@@ -274,7 +306,6 @@
             }
             const receiptData = await response.json();
             
-            // Create a new window with styled receipt content
             const receiptWindow = window.open('', '_blank');
             if (!receiptWindow) {
                 alert('Please allow pop-ups to print receipts');
