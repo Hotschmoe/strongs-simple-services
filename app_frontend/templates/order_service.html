@@ -127,23 +127,28 @@
 
                 <div class="payment-section mt-4" style="display: none;">
                     <h3>Payment Method</h3>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="cash">
-                        <label class="form-check-label" for="cashPayment">
-                            Pay with Cash (at pickup)
-                        </label>
+                    <div class="payment-method-container">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="cash">
+                            <label class="form-check-label" for="cashPayment">
+                                Pay with Cash (at pickup)
+                            </label>
+                        </div>
+                        {% if business_config['paymentSettings']['acceptCard'] and business_config['paymentSettings']['stripeEnabled'] %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="cardPayment" value="card">
+                            <label class="form-check-label" for="cardPayment">
+                                Pay with Card
+                            </label>
+                        </div>
+                        <div id="card-element-container" style="display: none;">
+                            <div id="card-element">
+                                <!-- Stripe Elements will be inserted here -->
+                            </div>
+                            <div id="card-errors" class="text-danger" role="alert"></div>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% if business_config['paymentSettings']['acceptCard'] and business_config['paymentSettings']['stripeEnabled'] %}
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="cardPayment" value="card">
-                        <label class="form-check-label" for="cardPayment">
-                            Pay with Card
-                        </label>
-                    </div>
-                    <div id="card-element" class="mb-3" style="display: none;">
-                        <!-- Stripe Elements will be inserted here -->
-                    </div>
-                    {% endif %}
                 </div>
 
                 <button type="submit" class="btn btn-primary">Place Order</button>
@@ -173,8 +178,35 @@
 <script>
     const stripe = Stripe('{{ stripe_public_key }}');
     const elements = stripe.elements();
-    const card = elements.create('card');
+    const card = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#32325d',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontSmoothing: 'antialiased',
+                '::placeholder': {
+                    color: '#aab7c4'
+                },
+                padding: '10px 12px',
+            },
+            invalid: {
+                color: '#dc3545',
+                iconColor: '#dc3545'
+            }
+        }
+    });
     card.mount('#card-element');
+
+    // Add real-time validation
+    card.addEventListener('change', function(event) {
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+            displayError.textContent = event.error.message;
+        } else {
+            displayError.textContent = '';
+        }
+    });
 </script>
 {% endif %}
 <script>
@@ -412,6 +444,17 @@
             alert('Failed to generate receipt: ' + error.message);
         }
     });
+
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const cardElementContainer = document.getElementById('card-element-container');
+            if (this.value === 'card') {
+                cardElementContainer.style.display = 'block';
+            } else {
+                cardElementContainer.style.display = 'none';
+            }
+        });
+    });
 </script>
 {% endblock %}
 
@@ -457,6 +500,48 @@
         .service-card-wrapper {
             flex-basis: 100%;
         }
+    }
+
+    /* Add these new styles for the card element */
+    #card-element {
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease;
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
+    #card-element:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    #card-element.StripeElement--focus {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        border-color: #0066cc;
+    }
+
+    #card-element.StripeElement--invalid {
+        border-color: #dc3545;
+    }
+
+    /* Card payment section styling */
+    .payment-method-container {
+        padding: 20px;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+        margin-bottom: 30px;
+    }
+
+    body.dark-mode #card-element {
+        background-color: #2c3e50;
+        border-color: #4a4a4a;
+    }
+
+    body.dark-mode .payment-method-container {
+        background-color: #1a2634;
     }
 </style>
 {% endblock %}
