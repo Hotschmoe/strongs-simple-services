@@ -348,6 +348,16 @@
                                 display: none;
                             }
                         }
+                        .receipt-section {
+                            margin: 15px 0;
+                            padding: 10px 0;
+                            border-top: 1px solid #eee;
+                        }
+                        .receipt-section h4 {
+                            margin-bottom: 10px;
+                            color: #666;
+                            font-size: 14px;
+                        }
                     </style>
                 </head>
                 <body>
@@ -379,6 +389,15 @@
                     <div class="receipt-item">
                         <span>Date:</span>
                         <span>${receiptData.date}</span>
+                    </div>
+                    
+                    ${receiptData.service_options}
+                    
+                    <div class="receipt-section">
+                        <h4>Special Requests:</h4>
+                        <div class="receipt-item">
+                            <p>${receiptData.requests_comments || ''}</p>
+                        </div>
                     </div>
                     
                     <div class="no-print" style="text-align: center; margin-top: 30px;">

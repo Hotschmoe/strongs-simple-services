@@ -247,7 +247,6 @@ def get_receipt(order_id):
     
     order = Order.query.get_or_404(order_id)
     
-    # Allow access if user is admin or if the order belongs to the user
     if not g.user.is_admin and order.user_id != g.user.id:
         return jsonify({'error': 'Unauthorized'}), 403
     
@@ -255,8 +254,10 @@ def get_receipt(order_id):
     service_options_html = ""
     if order.service_options:
         options = json.loads(order.service_options)
+        service_options_html = "<div class='receipt-section'><h4>Selected Options:</h4>"
         for category, option in options.items():
             service_options_html += f"<div class='receipt-item'><span>{category}:</span><span>{option}</span></div>"
+        service_options_html += "</div>"
     
     receipt_data = {
         'order_id': order.id,
@@ -267,7 +268,7 @@ def get_receipt(order_id):
         'date': order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
         'business_name': business_config['businessName'],
         'service_options': service_options_html,
-        'requests_comments': order.requests_comments
+        'requests_comments': order.requests_comments if order.requests_comments else ''
     }
     
     return jsonify(receipt_data)
@@ -653,38 +654,9 @@ def submit_order():
         payment_method = data.get('paymentMethod')
         price = data.get('price')
         
-        # Get service options
-        service_options = {}
-        for category in business_config['serviceOptions']['categories']:
-            option_name = data.get(f"option_{category['categoryName']}")
-            if option_name:
-                service_options[category['categoryName']] = option_name
-        
-        # Get special requests/comments
+        # Get service options directly from the request data
+        service_options = data.get('serviceOptions', {})
         requests_comments = data.get('requestsComments', '')
-
-        app.logger.debug(f"Order submission - Service Type: {service_type}, Service ID: {service_id}")
-        app.logger.debug(f"Available subscription services: {business_config['services'].get('subscription', [])}")
-
-        if not all([service_type, service_id, payment_method, price]):
-            app.logger.error(f"Missing required fields: {{'serviceType': service_type, 'serviceId': service_id, 'paymentMethod': payment_method, 'price': price}}")
-            return jsonify({'error': 'Missing required order information'}), 400
-
-        # Handle subscription
-        if service_type == 'subscription':
-            # Find subscription details from business config
-            subscription_config = next(
-                (s for s in business_config['services']['subscription'] 
-                 if s.get('id') == service_id),  # Added .get() for safer access
-                None
-            )
-            
-            if not subscription_config:
-                app.logger.error(f"Invalid subscription service ID: {service_id}")
-                app.logger.error(f"Available subscription IDs: {[s.get('id') for s in business_config['services'].get('subscription', [])]}")
-                raise ValueError(f'Invalid subscription service: {service_id}')
-
-            app.logger.debug(f"Found subscription config: {subscription_config}")
 
         # Create order with correct payment status
         order_id = str(uuid.uuid4())
@@ -697,11 +669,11 @@ def submit_order():
             payment_method=payment_method,
             payment_status='pending' if payment_method == 'card' else 'unpaid',
             is_subscription_order=(service_type == 'subscription'),
-            service_options=json.dumps(service_options),
+            service_options=json.dumps(service_options),  # Make sure to JSON encode the options
             requests_comments=requests_comments
         )
         db.session.add(order)
-
+        
         # Handle subscription
         if service_type == 'subscription':
             # Find subscription details from business config
@@ -922,6 +894,12 @@ def request_subscription_service():
         app.logger.error(f"Failed to create subscription service order: {str(e)}")
         flash('Failed to request service. Please try again.', 'error')
         return redirect(url_for('order_service'))
+
+@app.template_filter('from_json')
+def from_json(value):
+    if not value:
+        return {}
+    return json.loads(value)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
