@@ -18,22 +18,35 @@ This web application helps service-based businesses manage orders and subscripti
 - [x] Docker containerization
   - [x] Frontend container
   - [x] SQLite database with automatic schema updates
+  - [ ] Automatic database backups
+  - [ ] PostgreSQL support for production
 - [x] User account management
   - [x] Registration
   - [x] Login
   - [x] Profile editing (name, phone, address)
+  - [x] Admin user management
+  - [ ] Password reset functionality
+  - [ ] Email verification
 - [x] Service ordering system
   - [x] One-time services
   - [x] Subscription services
   - [x] QR code generation for easy ordering
+  - [x] Service options and add-ons
+  - [ ] Order history and tracking
+  - [ ] Service availability scheduling
 - [x] Admin functionality
   - [x] Order management
   - [x] User management
   - [x] Business configuration editor
   - [x] Database backup and restore
+  - [ ] Analytics dashboard
+  - [ ] Bulk operations (orders/users)
 - [x] Payment processing
   - [x] Stripe integration for card payments
   - [x] Cash payment tracking
+  - [x] Payment status monitoring
+  - [ ] Multiple payment gateway support
+  - [ ] Partial refund handling
 - [x] Mobile-first responsive design
 - [x] Business configuration via JSON
 - [x] Development access via ngrok
@@ -41,18 +54,61 @@ This web application helps service-based businesses manage orders and subscripti
 ### In Progress
 - [ ] Subscription management
   - [ ] Automatic renewal processing
-  - [ ] Usage tracking
+  - [ ] Usage tracking and limits
   - [ ] Cancellation handling
+  - [ ] Plan switching
+  - [ ] Prorated billing
+  - [ ] Subscription pause/resume
 - [ ] Enhanced admin dashboard
   - [ ] Form-based interface for database editing
   - [ ] Improved order management UI
+  - [ ] Customer communication system
+  - [ ] Staff management and permissions
+  - [ ] Audit logging
 - [ ] Business customization
   - [ ] Static directory for favicon and images
   - [ ] Service images in business_config.json
   - [ ] About page configuration
+  - [ ] Custom CSS themes
+  - [ ] Email template customization
 - [ ] User interface improvements
   - [ ] Footer with business information and social media links
   - [ ] Contact owner button/information on user profile page
+  - [ ] Dark mode toggle
+  - [ ] Accessibility improvements
+  - [ ] Mobile app-like experience
+
+### Future Features
+- [ ] Advanced Business Features
+  - [ ] Multi-location support
+  - [ ] Inventory management
+  - [ ] Employee scheduling
+  - [ ] Customer loyalty program
+  - [ ] Gift cards and promotions
+- [ ] Integration Capabilities
+  - [ ] SMS notifications
+  - [ ] Email marketing integration
+  - [ ] Calendar integration (Google, iCal)
+  - [ ] Accounting software integration
+  - [ ] Social media integration
+- [ ] Enhanced Security
+  - [ ] Two-factor authentication
+  - [ ] API key management
+  - [ ] Rate limiting
+  - [ ] Enhanced audit logging
+  - [ ] GDPR compliance tools
+- [ ] Reporting and Analytics
+  - [ ] Sales reports
+  - [ ] Customer analytics
+  - [ ] Service popularity metrics
+  - [ ] Revenue forecasting
+  - [ ] Custom report builder
+- [ ] Customer Experience
+  - [ ] Customer portal
+  - [ ] Mobile app
+  - [ ] Service ratings and reviews
+  - [ ] Automated customer support
+  - [ ] Appointment scheduling
 
 ## Payment Processing
 
@@ -130,12 +186,14 @@ Example configuration:
             {
                 "name": "Standard Loads",
                 "description": "Pickup, Wash, Fold.",
-                "price": 25
+                "price": 25,
+                "id": "standard-loads"
             },
             {
                 "name": "Rush Loads",
                 "description": "Pickup, Wash, Fold. in 48 hours",
-                "price": 35
+                "price": 35,
+                "id": "rush-loads"
             }
         ],
         "subscription": [
@@ -144,16 +202,66 @@ Example configuration:
                 "description": "4 washes per month",
                 "price": 80,
                 "billingFrequency": "monthly",
-                "servicesPerPeriod": 4
-            },
-            {
-                "name": "Large Wash Plan",
-                "description": "6 washes per month",
-                "price": 90,
-                "billingFrequency": "monthly",
-                "servicesPerPeriod": 6
+                "servicesPerPeriod": 4,
+                "id": "standard-wash-plan"
             }
         ]
+    },
+    "serviceOptions": {
+        "categories": [
+            {
+                "categoryName": "Detergents",
+                "options": [
+                    {
+                        "name": "EOS Hypoallergenic Liquid Laundry Detergent + Enzymes - Lavender Scent",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Persil OXI + Odor Power Liquid Laundry Detergent",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Molly Suds Laundry Powder - Unscented",
+                        "additionalCost": 1
+                    }
+                ]
+            },
+            {
+                "categoryName": "Stain Removers",
+                "options": [
+                    {
+                        "name": "None",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Oxy Clean",
+                        "additionalCost": 1
+                    },
+                    {
+                        "name": "Shout",
+                        "additionalCost": 1
+                    }
+                ]
+            },
+            {
+                "categoryName": "Drying",
+                "options": [
+                    {
+                        "name": "None",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Bounce Dryer Sheets - Outdoor Fresh",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Wool Dryer Balls - No Scent",
+                        "additionalCost": 0
+                    }
+                ]
+            }
+        ],
+        "requestsComments": ""
     }
 }
 ```
