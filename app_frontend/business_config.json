@@ -43,7 +43,7 @@
         ]
     },
     "serviceOptions": {
-        "categories": [
+        "oneTimeOptions": [
             {
                 "categoryName": "Detergents",
                 "options": [
@@ -72,7 +72,9 @@
                         "additionalCost": 1
                     }
                 ]
-            },
+            }
+        ],
+        "subscriptionOptionsAtSignup": [
             {
                 "categoryName": "Stain Removers",
                 "options": [
@@ -93,7 +95,9 @@
                         "additionalCost": 1
                     }
                 ]
-            },
+            }
+        ],
+        "subscriptionOptionsAtOrder": [
             {
                 "categoryName": "Scent Boosters",
                 "options": [
@@ -112,36 +116,6 @@
                     {
                         "name": "Fresh frais",
                         "additionalCost": 1
-                    }
-                ]
-            },
-            {
-                "categoryName": "Drying",
-                "options": [
-                    {
-                        "name": "None",
-                        "additionalCost": 0
-                    },
-                    {
-                        "name": "Bounce Dryer Sheets - Outdoor Fresh",
-                        "additionalCost": 0
-                    },
-                    {
-                        "name": "Wool Dryer Balls - No Scent",
-                        "additionalCost": 0
-                    }
-                ]
-            },
-            {
-                "categoryName": "Shirts",
-                "options": [
-                    {
-                        "name": "Laid Out",
-                        "additionalCost": 0
-                    },
-                    {
-                        "name": "Folded",
-                        "additionalCost": 0
                     }
                 ]
             }
