@@ -609,10 +609,7 @@ def create_payment_intent():
         service_options = data.get('serviceOptions', {})
         requests_comments = data.get('requestsComments', '')
 
-        if not all([service_type, service_id, price]):
-            return jsonify({'error': 'Missing required payment information'}), 400
-
-        # Create order first
+        # Create order with service options
         order_id = str(uuid.uuid4())
         order = Order(
             id=order_id,
@@ -627,8 +624,8 @@ def create_payment_intent():
             requests_comments=requests_comments
         )
         db.session.add(order)
-        
-        # If it's a subscription order, prepare the subscription
+
+        # Handle subscription creation
         if service_type == 'subscription':
             subscription_config = next(
                 (s for s in business_config['services']['subscription'] 
@@ -639,21 +636,21 @@ def create_payment_intent():
             if not subscription_config:
                 raise ValueError('Invalid subscription service')
 
-            # Create subscription record (will be activated after payment)
             new_subscription = Subscription(
                 user_id=g.user.id,
                 subscription_id=service_id,
-                status='pending',  # Will be activated after payment
+                status='pending',
                 start_date=datetime.utcnow(),
                 end_date=datetime.utcnow() + timedelta(days=30),
                 services_allowed=subscription_config['servicesPerPeriod'],
-                services_used=0
+                services_used=0,
+                service_options=json.dumps(service_options)
             )
             db.session.add(new_subscription)
 
         db.session.commit()
 
-        # Create payment intent
+        # Create Stripe payment intent
         intent = stripe.PaymentIntent.create(
             amount=int(float(price) * 100),
             currency=business_config.get('paymentSettings', {}).get('currency', 'usd'),
@@ -689,15 +686,12 @@ def submit_order():
         service_id = data.get('serviceId')
         payment_method = data.get('paymentMethod')
         price = data.get('price')
-        
-        # Get service options directly from the request data
         service_options = data.get('serviceOptions', {})
         requests_comments = data.get('requestsComments', '')
 
-        # Create order with correct payment status
-        order_id = str(uuid.uuid4())
+        # Create order with service options
         order = Order(
-            id=order_id,
+            id=str(uuid.uuid4()),
             user_id=g.user.id,
             service_type=service_id,
             quantity=1,
@@ -705,14 +699,13 @@ def submit_order():
             payment_method=payment_method,
             payment_status='pending' if payment_method == 'card' else 'unpaid',
             is_subscription_order=(service_type == 'subscription'),
-            service_options=json.dumps(service_options),  # Make sure to JSON encode the options
+            service_options=json.dumps(service_options),
             requests_comments=requests_comments
         )
         db.session.add(order)
         
         # Handle subscription
         if service_type == 'subscription':
-            # Find subscription details from business config
             subscription_config = next(
                 (s for s in business_config['services']['subscription'] 
                  if s['id'] == service_id),
@@ -722,15 +715,16 @@ def submit_order():
             if not subscription_config:
                 raise ValueError('Invalid subscription service')
 
-            # Create new subscription
+            # Create new subscription with signup options
             new_subscription = Subscription(
                 user_id=g.user.id,
                 subscription_id=service_id,
                 status='active',
                 start_date=datetime.utcnow(),
-                end_date=datetime.utcnow() + timedelta(days=30),  # Adjust based on billing frequency
+                end_date=datetime.utcnow() + timedelta(days=30),
                 services_allowed=subscription_config['servicesPerPeriod'],
-                services_used=0
+                services_used=0,
+                service_options=json.dumps(service_options)  # Save signup options with subscription
             )
             db.session.add(new_subscription)
 
@@ -903,6 +897,17 @@ def request_subscription_service():
         return redirect(url_for('order_service'))
 
     try:
+        # Collect service options
+        service_options = {}
+        for category in business_config['serviceOptions']['subscriptionOptionsAtOrder']:
+            category_name = category['categoryName']
+            option_value = request.form.get(f'option_{category_name}')
+            if option_value:
+                service_options[category_name] = option_value
+
+        # Get comments
+        comments = request.form.get('subscription_comments', '')
+
         # Create a new order for the service
         order = Order(
             id=str(uuid.uuid4()),
@@ -913,7 +918,9 @@ def request_subscription_service():
             status='Pending',
             payment_status='paid',  # Already paid through subscription
             payment_method='subscription',
-            is_subscription_order=True
+            is_subscription_order=True,
+            service_options=json.dumps(service_options),
+            requests_comments=comments
         )
         
         # Increment the services used count
