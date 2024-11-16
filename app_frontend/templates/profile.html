@@ -21,7 +21,20 @@
                                 <p class="mb-1">Status: {{ subscription.status }}</p>
                                 <p class="mb-1">Services Remaining: {{ subscription.services_allowed - subscription.services_used }}</p>
                                 <p class="mb-1">Start Date: {{ subscription.start_date.strftime('%Y-%m-%d') }}</p>
-                                <p class="mb-0">Expires: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
+                                <p class="mb-1">Expires: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
+                                
+                                {% if subscription.service_options %}
+                                    <div class="mt-2">
+                                        <p class="mb-1"><strong>Selected Options:</strong></p>
+                                        {% set options = subscription.service_options|from_json %}
+                                        {% for category, option in options.items() %}
+                                            <p class="mb-1 ms-3">
+                                                <small class="text-muted">{{ category }}:</small> 
+                                                {{ option }}
+                                            </p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                                 
                                 {% if user.can_cancel_subscription(subscription.subscription_id) %}
                                     <form method="POST" action="{{ url_for('cancel_subscription') }}" 
@@ -60,6 +73,7 @@
                             <tr>
                                 <th>Order ID</th>
                                 <th>Service</th>
+                                <th>Options</th>
                                 <th>Total</th>
                                 <th>Status</th>
                                 <th>Payment Status</th>
@@ -71,6 +85,19 @@
                                 <tr>
                                     <td>{{ order.id[:8] }}...</td>
                                     <td>{{ order.service_type }}</td>
+                                    <td>
+                                        {% if order.service_options %}
+                                            {% set options = order.service_options|from_json %}
+                                            {% for category, option in options.items() %}
+                                                <div class="mb-1">
+                                                    <small class="text-muted">{{ category }}:</small> 
+                                                    <span>{{ option }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <small class="text-muted">No options selected</small>
+                                        {% endif %}
+                                    </td>
                                     <td>${{ "%.2f"|format(order.total) }}</td>
                                     <td><span class="badge bg-warning">{{ order.status }}</span></td>
                                     <td><span class="badge bg-{{ 'success' if order.payment_status == 'paid' else 'warning' }}">
@@ -101,6 +128,7 @@
                             <tr>
                                 <th>Order ID</th>
                                 <th>Service</th>
+                                <th>Options</th>
                                 <th>Total</th>
                                 <th>Payment Method</th>
                                 <th>Date</th>
@@ -112,15 +140,27 @@
                                 <tr>
                                     <td>{{ order.id[:8] }}...</td>
                                     <td>{{ order.service_type }}</td>
+                                    <td>
+                                        {% if order.service_options %}
+                                            {% set options = order.service_options|from_json %}
+                                            {% for category, option in options.items() %}
+                                                <div class="mb-1">
+                                                    <small class="text-muted">{{ category }}:</small> 
+                                                    <span>{{ option }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <small class="text-muted">No options selected</small>
+                                        {% endif %}
+                                    </td>
                                     <td>${{ "%.2f"|format(order.total) }}</td>
                                     <td>{{ order.payment_method|title }}</td>
                                     <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
                                     <td>
-                                        <a href="{{ url_for('get_receipt', order_id=order.id) }}" 
-                                           target="_blank" 
-                                           class="btn btn-sm btn-outline-secondary">
+                                        <button class="btn btn-sm btn-outline-secondary print-receipt" 
+                                                data-order-id="{{ order.id }}">
                                             <i class="fas fa-print"></i> Receipt
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>
                             {% endfor %}
