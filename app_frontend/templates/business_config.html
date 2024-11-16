@@ -20,6 +20,43 @@
             <textarea class="form-control" id="about" name="about" rows="3" required>{{ business_config.about }}</textarea>
         </div>
 
+        <h3 class="mt-4">Payment Settings</h3>
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="acceptCash" 
+                                   {% if business_config.paymentSettings.acceptCash %}checked{% endif %}>
+                            <label class="form-check-label" for="acceptCash">Accept Cash Payments</label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="acceptCard" 
+                                   {% if business_config.paymentSettings.acceptCard %}checked{% endif %}>
+                            <label class="form-check-label" for="acceptCard">Accept Card Payments</label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="stripeEnabled" 
+                                   {% if business_config.paymentSettings.stripeEnabled %}checked{% endif %}>
+                            <label class="form-check-label" for="stripeEnabled">Enable Stripe Integration</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="currency" class="form-label">Currency</label>
+                            <select class="form-select" id="currency">
+                                <option value="usd" {% if business_config.paymentSettings.currency == 'usd' %}selected{% endif %}>USD</option>
+                                <option value="eur" {% if business_config.paymentSettings.currency == 'eur' %}selected{% endif %}>EUR</option>
+                                <option value="gbp" {% if business_config.paymentSettings.currency == 'gbp' %}selected{% endif %}>GBP</option>
+                                <option value="cad" {% if business_config.paymentSettings.currency == 'cad' %}selected{% endif %}>CAD</option>
+                                <option value="aud" {% if business_config.paymentSettings.currency == 'aud' %}selected{% endif %}>AUD</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <h3 class="mt-4">Services</h3>
         
         <!-- One-Time Services -->
@@ -302,7 +339,12 @@ document.getElementById('businessConfigForm').addEventListener('submit', functio
         businessName: document.getElementById('businessName').value,
         businessDescription: document.getElementById('businessDescription').value,
         about: document.getElementById('about').value,
-        paymentSettings: {{ business_config.paymentSettings|tojson|safe }},
+        paymentSettings: {
+            acceptCash: document.getElementById('acceptCash').checked,
+            acceptCard: document.getElementById('acceptCard').checked,
+            stripeEnabled: document.getElementById('stripeEnabled').checked,
+            currency: document.getElementById('currency').value
+        },
         services: {
             oneTime: [],
             subscription: []
@@ -377,6 +419,33 @@ document.getElementById('businessConfigForm').addEventListener('submit', functio
         console.error('Error:', error);
         alert('Error saving configuration');
     });
+});
+
+document.getElementById('acceptCard').addEventListener('change', function(e) {
+    const stripeEnabled = document.getElementById('stripeEnabled');
+    if (!this.checked) {
+        stripeEnabled.checked = false;
+        stripeEnabled.disabled = true;
+    } else {
+        stripeEnabled.disabled = false;
+    }
+});
+
+document.getElementById('stripeEnabled').addEventListener('change', function(e) {
+    const acceptCard = document.getElementById('acceptCard');
+    if (this.checked && !acceptCard.checked) {
+        acceptCard.checked = true;
+    }
+});
+
+// Initialize the state
+document.addEventListener('DOMContentLoaded', function() {
+    const acceptCard = document.getElementById('acceptCard');
+    const stripeEnabled = document.getElementById('stripeEnabled');
+    if (!acceptCard.checked) {
+        stripeEnabled.checked = false;
+        stripeEnabled.disabled = true;
+    }
 });
 </script>
 {% endblock %}
