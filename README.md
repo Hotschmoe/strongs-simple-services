@@ -45,6 +45,7 @@ This web application helps service-based businesses manage orders and subscripti
   - [ ] SMS notifications
   - [ ] Calendar integration
   - [ ] Proxy-ordering (admin can order for users)
+  - [ ] Custom orders? (admin can create orders for users with custom services/options not available to on page)
   - [ ] Handle payment failures
   - [ ] Handle subscription turnover (cancel/renew/consumed)
   - [ ] Handle Consent Forms and Agreement Signatures (save to database)
