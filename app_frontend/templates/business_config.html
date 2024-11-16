@@ -1,477 +1,380 @@
 {% extends "base.html" %}
 
-{% macro render_category(category, categoryType, categoryIndex) %}
-<div class="category-item mb-4">
-    <div class="mb-2">
-        <label class="form-label h5">Category Name</label>
-        <input type="text" class="form-control form-control-lg" 
-               name="serviceOptions[{{ categoryType }}][{{ categoryIndex }}][categoryName]" 
-               value="{{ category['categoryName'] }}">
-    </div>
-    <div class="options-list">
-        {% for option in category['options'] %}
-        <div class="option-item mb-2">
-            <div class="row">
-                <div class="col-md-8">
-                    <input type="text" class="form-control" 
-                           name="serviceOptions[{{ categoryType }}][{{ categoryIndex }}][options][{{ loop.index0 }}][name]" 
-                           value="{{ option['name'] }}">
-                </div>
-                <div class="col-md-3">
-                    <input type="number" class="form-control" step="0.01"
-                           name="serviceOptions[{{ categoryType }}][{{ categoryIndex }}][options][{{ loop.index0 }}][additionalCost]" 
-                           value="{{ option['additionalCost'] }}">
-                </div>
-                <div class="col-md-1">
-                    <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    <button type="button" class="btn btn-secondary btn-sm add-option mt-2">Add Option</button>
-    <button type="button" class="btn btn-danger btn-sm remove-category mt-2">Remove Category</button>
-</div>
-{% endmacro %}
-
-{% block title %}Business Configuration - {{ business_config['businessName'] }}{% endblock %}
-
 {% block content %}
-<div class="container">
-    <h1 class="mb-4">Business Configuration</h1>
-    <div class="card mb-4">
-        <div class="card-body">
-            <form id="businessConfigForm" onsubmit="return false;">
-                <div class="mb-3">
-                    <label class="form-label">Business Name</label>
-                    <input type="text" class="form-control" name="businessName" value="{{ business_config['businessName'] }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Business Description</label>
-                    <textarea class="form-control" name="businessDescription" rows="2">{{ business_config['businessDescription'] }}</textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">About</label>
-                    <textarea class="form-control" name="about" rows="3">{{ business_config['about'] }}</textarea>
-                </div>
-
-                <h4 class="mt-4">Payment Settings</h4>
-                <div class="card mb-4 p-3">
-                    <div class="mb-2">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" name="stripeEnabled" id="stripeEnabled"
-                                {% if business_config['paymentSettings']['stripeEnabled'] %}checked{% endif %}>
-                            <label class="form-check-label" for="stripeEnabled">Enable Stripe Integration</label>
-                        </div>
-                    </div>
-                </div>
-
-                <h4 class="mt-4">One-Time Services</h4>
-                <div id="oneTimeServices">
-                    {% for service in business_config['services']['oneTime'] %}
-                    <div class="service-item card mb-3 p-3">
-                        <div class="mb-2">
-                            <label class="form-label">Service Name</label>
-                            <input type="text" class="form-control" name="oneTime[{{ loop.index0 }}][name]" value="{{ service['name'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Description</label>
-                            <input type="text" class="form-control" name="oneTime[{{ loop.index0 }}][description]" value="{{ service['description'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Price</label>
-                            <input type="number" class="form-control" name="oneTime[{{ loop.index0 }}][price]" value="{{ service['price'] }}">
-                        </div>
-                        <button type="button" class="btn btn-danger btn-sm mt-2 remove-service" style="width: fit-content;">Remove Service</button>
-                    </div>
-                    {% endfor %}
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm mb-4" id="addOneTimeService">Add One-Time Service</button>
-
-                <h4 class="mt-4">Subscription Services</h4>
-                <div id="subscriptionServices">
-                    {% for service in business_config['services']['subscription'] %}
-                    <div class="service-item card mb-3 p-3">
-                        <div class="mb-2">
-                            <label class="form-label">Service Name</label>
-                            <input type="text" class="form-control" name="subscription[{{ loop.index0 }}][name]" value="{{ service['name'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Description</label>
-                            <input type="text" class="form-control" name="subscription[{{ loop.index0 }}][description]" value="{{ service['description'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Price</label>
-                            <input type="number" class="form-control" name="subscription[{{ loop.index0 }}][price]" value="{{ service['price'] }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Billing Frequency</label>
-                            <select class="form-control" name="subscription[{{ loop.index0 }}][billingFrequency]">
-                                <option value="weekly" {% if service['billingFrequency'] == 'weekly' %}selected{% endif %}>Weekly</option>
-                                <option value="monthly" {% if service['billingFrequency'] == 'monthly' %}selected{% endif %}>Monthly</option>
-                                <option value="yearly" {% if service['billingFrequency'] == 'yearly' %}selected{% endif %}>Yearly</option>
-                            </select>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Services Per Period</label>
-                            <input type="number" class="form-control" name="subscription[{{ loop.index0 }}][servicesPerPeriod]" value="{{ service['servicesPerPeriod'] }}">
-                        </div>
-                        <button type="button" class="btn btn-danger btn-sm mt-2 remove-service" style="width: fit-content;">Remove Service</button>
-                    </div>
-                    {% endfor %}
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm mb-4" id="addSubscriptionService">Add Subscription Service</button>
-
-                <h4 class="mt-4">Service Options</h4>
-                <div class="card mb-4 p-3">
-                    <div id="serviceOptions">
-                        <h5>One-Time Options</h5>
-                        {% for category in business_config['serviceOptions']['oneTimeOptions'] %}
-                        {{ render_category(category, 'oneTimeOptions', loop.index0) }}
-                        {% endfor %}
-                        <button type="button" class="btn btn-secondary btn-sm mt-3" data-category-type="oneTimeOptions" id="addCategory">Add One-Time Category</button>
-
-                        <h5 class="mt-4">Subscription Options at Signup</h5>
-                        {% for category in business_config['serviceOptions']['subscriptionOptionsAtSignup'] %}
-                        {{ render_category(category, 'subscriptionOptionsAtSignup', loop.index0) }}
-                        {% endfor %}
-                        <button type="button" class="btn btn-secondary btn-sm mt-3" data-category-type="subscriptionOptionsAtSignup" id="addCategory">Add Signup Category</button>
-
-                        <h5 class="mt-4">Subscription Options at Order</h5>
-                        {% for category in business_config['serviceOptions']['subscriptionOptionsAtOrder'] %}
-                        {{ render_category(category, 'subscriptionOptionsAtOrder', loop.index0) }}
-                        {% endfor %}
-                        <button type="button" class="btn btn-secondary btn-sm mt-3" data-category-type="subscriptionOptionsAtOrder" id="addCategory">Add Order Category</button>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Save Configuration</button>
-                </div>
-            </form>
+<div class="container mt-4">
+    <h2>Business Configuration</h2>
+    
+    <form id="businessConfigForm" class="mt-4">
+        <div class="mb-3">
+            <label for="businessName" class="form-label">Business Name</label>
+            <input type="text" class="form-control" id="businessName" name="businessName" value="{{ business_config.businessName }}" required>
         </div>
-    </div>
-</div>
-{% endblock %}
 
-{% block extra_scripts %}
-<script>
-    const businessConfigForm = document.getElementById('businessConfigForm');
-    const submitButton = businessConfigForm.querySelector('button[type="submit"]');
+        <div class="mb-3">
+            <label for="businessDescription" class="form-label">Business Description</label>
+            <textarea class="form-control" id="businessDescription" name="businessDescription" rows="2" required>{{ business_config.businessDescription }}</textarea>
+        </div>
 
-    submitButton.addEventListener('click', async (e) => {
-        e.preventDefault();
+        <div class="mb-3">
+            <label for="about" class="form-label">About</label>
+            <textarea class="form-control" id="about" name="about" rows="3" required>{{ business_config.about }}</textarea>
+        </div>
+
+        <h3 class="mt-4">Services</h3>
         
-        // Show loading state
-        submitButton.disabled = true;
-        const originalButtonText = submitButton.textContent;
-        submitButton.textContent = 'Saving...';
-        
-        // Add loading overlay
-        const loadingOverlay = document.createElement('div');
-        loadingOverlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75';
-        loadingOverlay.style.zIndex = '9999';
-        loadingOverlay.innerHTML = `
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+        <!-- One-Time Services -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>One-Time Services</h4>
             </div>
-        `;
-        document.body.appendChild(loadingOverlay);
-        
-        try {
-            // Validate required fields
-            const requiredFields = ['businessName', 'businessDescription', 'about'];
-            for (const field of requiredFields) {
-                const input = businessConfigForm.elements[field];
-                if (!input.value.trim()) {
-                    throw new Error(`${field.replace(/([A-Z])/g, ' $1').toLowerCase()} is required`);
-                }
-            }
-
-            // Gather form data
-            const formData = {
-                businessName: businessConfigForm.elements.businessName.value.trim(),
-                businessDescription: businessConfigForm.elements.businessDescription.value.trim(),
-                about: businessConfigForm.elements.about.value.trim(),
-                paymentSettings: {
-                    acceptCash: true,
-                    acceptCard: true,
-                    stripeEnabled: businessConfigForm.elements.stripeEnabled.checked,
-                    currency: 'usd'
-                },
-                services: {
-                    oneTime: [],
-                    subscription: []
-                },
-                serviceOptions: {
-                    categories: [],
-                    requestsComments: ""
-                }
-            };
-
-            // Gather one-time services
-            document.querySelectorAll('#oneTimeServices .service-item').forEach(item => {
-                const service = {
-                    name: item.querySelector('[name$="[name]"]').value.trim(),
-                    description: item.querySelector('[name$="[description]"]').value.trim(),
-                    price: parseFloat(item.querySelector('[name$="[price]"]').value)
-                };
-
-                // Validate service data
-                if (!service.name || !service.description || isNaN(service.price)) {
-                    throw new Error('All service fields are required');
-                }
-
-                formData.services.oneTime.push(service);
-            });
-
-            // Gather subscription services
-            document.querySelectorAll('#subscriptionServices .service-item').forEach(item => {
-                const service = {
-                    name: item.querySelector('[name$="[name]"]').value.trim(),
-                    description: item.querySelector('[name$="[description]"]').value.trim(),
-                    price: parseFloat(item.querySelector('[name$="[price]"]').value),
-                    billingFrequency: item.querySelector('[name$="[billingFrequency]"]').value,
-                    servicesPerPeriod: parseInt(item.querySelector('[name$="[servicesPerPeriod]"]').value)
-                };
-
-                // Validate service data
-                if (!service.name || !service.description || isNaN(service.price) || 
-                    !service.billingFrequency || isNaN(service.servicesPerPeriod)) {
-                    throw new Error('All service fields are required');
-                }
-
-                formData.services.subscription.push(service);
-            });
-
-            // Gather service options
-            document.querySelectorAll('#serviceOptions .category-item').forEach((category, categoryIndex) => {
-                const categoryData = {
-                    categoryName: category.querySelector('input[name$="[categoryName]"]').value.trim(),
-                    options: []
-                };
-
-                category.querySelectorAll('.option-item').forEach(option => {
-                    const optionData = {
-                        name: option.querySelector('[name$="[name]"]').value.trim(),
-                        additionalCost: parseFloat(option.querySelector('[name$="[additionalCost]"]').value)
-                    };
-
-                    if (!optionData.name) {
-                        throw new Error('All option names are required');
-                    }
-
-                    categoryData.options.push(optionData);
-                });
-
-                formData.serviceOptions.categories.push(categoryData);
-            });
-
-            const response = await fetch('/api/update-business-config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-                // Show success message using Bootstrap's toast
-                const toastElement = document.createElement('div');
-                toastElement.className = 'toast position-fixed top-0 end-0 m-3';
-                toastElement.innerHTML = `
-                    <div class="toast-header bg-success text-white">
-                        <strong class="me-auto">Success</strong>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            <div class="card-body" id="oneTimeServices">
+                {% for service in business_config.services.oneTime %}
+                <div class="service-item mb-3">
+                    <div class="row">
+                        <div class="col">
+                            <input type="text" class="form-control" placeholder="Service Name" value="{{ service.name }}" required>
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control" placeholder="Description" value="{{ service.description }}" required>
+                        </div>
+                        <div class="col">
+                            <input type="number" class="form-control" placeholder="Price" value="{{ service.price }}" required>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-danger remove-service">Remove</button>
+                        </div>
                     </div>
-                    <div class="toast-body">
-                        Business configuration updated successfully!
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-primary" onclick="addService('oneTime')">Add One-Time Service</button>
+            </div>
+        </div>
+
+        <!-- Subscription Services -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Subscription Services</h4>
+            </div>
+            <div class="card-body" id="subscriptionServices">
+                {% for service in business_config.services.subscription %}
+                <div class="service-item mb-3">
+                    <div class="row">
+                        <div class="col">
+                            <input type="text" class="form-control" placeholder="Service Name" value="{{ service.name }}" required>
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control" placeholder="Description" value="{{ service.description }}" required>
+                        </div>
+                        <div class="col">
+                            <input type="number" class="form-control" placeholder="Price" value="{{ service.price }}" required>
+                        </div>
+                        <div class="col">
+                            <input type="number" class="form-control" placeholder="Services Per Period" value="{{ service.servicesPerPeriod }}" required>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-danger remove-service">Remove</button>
+                        </div>
                     </div>
-                `;
-                document.body.appendChild(toastElement);
-                
-                // Initialize and show the toast
-                const toast = new bootstrap.Toast(toastElement);
-                toast.show();
-                
-                // Reload page after short delay
-                setTimeout(() => window.location.reload(), 1500);
-            } else {
-                throw new Error(result.message || 'Failed to update configuration');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error: ' + error.message);
-        } finally {
-            // Restore button state and remove loading overlay
-            submitButton.disabled = false;
-            submitButton.textContent = originalButtonText;
-            document.body.removeChild(loadingOverlay);
-        }
-    });
-
-    // Add new one-time service
-    document.getElementById('addOneTimeService').addEventListener('click', () => {
-        const container = document.getElementById('oneTimeServices');
-        const newIndex = container.children.length;
-        
-        const serviceHTML = `
-            <div class="service-item card mb-3 p-3">
-                <div class="mb-2">
-                    <label class="form-label">Service Name</label>
-                    <input type="text" class="form-control" name="oneTime[${newIndex}][name]" value="">
                 </div>
-                <div class="mb-2">
-                    <label class="form-label">Description</label>
-                    <input type="text" class="form-control" name="oneTime[${newIndex}][description]" value="">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Price</label>
-                    <input type="number" class="form-control" name="oneTime[${newIndex}][price]" value="0">
-                </div>
-                <button type="button" class="btn btn-danger btn-sm mt-2 remove-service" style="width: fit-content;">Remove Service</button>
+                {% endfor %}
             </div>
-        `;
-        container.insertAdjacentHTML('beforeend', serviceHTML);
-    });
-
-    // Add new subscription service
-    document.getElementById('addSubscriptionService').addEventListener('click', () => {
-        const container = document.getElementById('subscriptionServices');
-        const newIndex = container.children.length;
-        
-        const serviceHTML = `
-            <div class="service-item card mb-3 p-3">
-                <div class="mb-2">
-                    <label class="form-label">Service Name</label>
-                    <input type="text" class="form-control" name="subscription[${newIndex}][name]" value="">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Description</label>
-                    <input type="text" class="form-control" name="subscription[${newIndex}][description]" value="">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Price</label>
-                    <input type="number" class="form-control" name="subscription[${newIndex}][price]" value="0">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Billing Frequency</label>
-                    <select class="form-control" name="subscription[${newIndex}][billingFrequency]">
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                    </select>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Services Per Period</label>
-                    <input type="number" class="form-control" name="subscription[${newIndex}][servicesPerPeriod]" value="1">
-                </div>
-                <button type="button" class="btn btn-danger btn-sm mt-2 remove-service" style="width: fit-content;">Remove Service</button>
+            <div class="card-footer">
+                <button type="button" class="btn btn-primary" onclick="addService('subscription')">Add Subscription Service</button>
             </div>
-        `;
-        container.insertAdjacentHTML('beforeend', serviceHTML);
-    });
+        </div>
 
-    // Remove service button handler
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-service')) {
-            if (confirm('Are you sure you want to remove this service?')) {
-                e.target.closest('.service-item').remove();
-            }
-        }
-    });
+        <!-- Service Options -->
+        <h3 class="mt-4">Service Options</h3>
 
-    // Add new category
-    document.querySelectorAll('#addCategory').forEach(button => {
-        button.addEventListener('click', () => {
-            const categoryType = button.getAttribute('data-category-type');
-            const container = document.querySelector(`#serviceOptions h5:contains('${categoryType.replace(/([A-Z])/g, ' $1')}')`).nextElementSibling;
-            const newIndex = container.children.length;
-
-            const categoryHTML = `
-                <div class="category-item mb-4">
-                    <div class="mb-2">
-                        <label class="form-label h5">Category Name</label>
-                        <input type="text" class="form-control form-control-lg" 
-                               name="serviceOptions[${categoryType}][${newIndex}][categoryName]" 
-                               value="">
+        <!-- One-Time Options -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>One-Time Service Options</h4>
+            </div>
+            <div class="card-body" id="oneTimeOptions">
+                {% for category in business_config.serviceOptions.oneTimeOptions %}
+                <div class="option-category mb-3">
+                    <div class="row mb-2">
+                        <div class="col">
+                            <input type="text" class="form-control" placeholder="Category Name" value="{{ category.categoryName }}" required>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-danger remove-category">Remove Category</button>
+                        </div>
                     </div>
                     <div class="options-list">
-                        <div class="option-item mb-2">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="text" class="form-control" 
-                                           name="serviceOptions[${categoryType}][${newIndex}][options][0][name]" 
-                                           value="">
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="number" class="form-control" step="0.01"
-                                           name="serviceOptions[${categoryType}][${newIndex}][options][0][additionalCost]" 
-                                           value="0">
-                                </div>
-                                <div class="col-md-1">
-                                    <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
-                                </div>
+                        {% for option in category.options %}
+                        <div class="option-item row mb-2">
+                            <div class="col">
+                                <input type="text" class="form-control" placeholder="Option Name" value="{{ option.name }}" required>
+                            </div>
+                            <div class="col">
+                                <input type="number" class="form-control" placeholder="Additional Cost" value="{{ option.additionalCost }}" required>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-danger remove-option">Remove Option</button>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    <button type="button" class="btn btn-secondary btn-sm add-option mt-2">Add Option</button>
-                    <button type="button" class="btn btn-danger btn-sm remove-category mt-2">Remove Category</button>
+                    <button type="button" class="btn btn-secondary add-option">Add Option</button>
                 </div>
-            `;
-            container.insertAdjacentHTML('beforeend', categoryHTML);
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-primary" onclick="addCategory('oneTimeOptions')">Add Category</button>
+            </div>
+        </div>
+
+        <!-- Subscription Options at Signup -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Subscription Options at Signup</h4>
+            </div>
+            <div class="card-body" id="subscriptionOptionsAtSignup">
+                {% for category in business_config.serviceOptions.subscriptionOptionsAtSignup %}
+                <div class="option-category mb-3">
+                    <div class="row mb-2">
+                        <div class="col">
+                            <input type="text" class="form-control" placeholder="Category Name" value="{{ category.categoryName }}" required>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-danger remove-category">Remove Category</button>
+                        </div>
+                    </div>
+                    <div class="options-list">
+                        {% for option in category.options %}
+                        <div class="option-item row mb-2">
+                            <div class="col">
+                                <input type="text" class="form-control" placeholder="Option Name" value="{{ option.name }}" required>
+                            </div>
+                            <div class="col">
+                                <input type="number" class="form-control" placeholder="Additional Cost" value="{{ option.additionalCost }}" required>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-danger remove-option">Remove Option</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-secondary add-option">Add Option</button>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-primary" onclick="addCategory('subscriptionOptionsAtSignup')">Add Category</button>
+            </div>
+        </div>
+
+        <!-- Subscription Options at Order -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Subscription Options at Order</h4>
+            </div>
+            <div class="card-body" id="subscriptionOptionsAtOrder">
+                {% for category in business_config.serviceOptions.subscriptionOptionsAtOrder %}
+                <div class="option-category mb-3">
+                    <div class="row mb-2">
+                        <div class="col">
+                            <input type="text" class="form-control" placeholder="Category Name" value="{{ category.categoryName }}" required>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-danger remove-category">Remove Category</button>
+                        </div>
+                    </div>
+                    <div class="options-list">
+                        {% for option in category.options %}
+                        <div class="option-item row mb-2">
+                            <div class="col">
+                                <input type="text" class="form-control" placeholder="Option Name" value="{{ option.name }}" required>
+                            </div>
+                            <div class="col">
+                                <input type="number" class="form-control" placeholder="Additional Cost" value="{{ option.additionalCost }}" required>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-danger remove-option">Remove Option</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-secondary add-option">Add Option</button>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-primary" onclick="addCategory('subscriptionOptionsAtOrder')">Add Category</button>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function addService(type) {
+    const container = document.getElementById(`${type}Services`);
+    const serviceHtml = `
+        <div class="service-item mb-3">
+            <div class="row">
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Service Name" required>
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Description" required>
+                </div>
+                <div class="col">
+                    <input type="number" class="form-control" placeholder="Price" required>
+                </div>
+                ${type === 'subscription' ? `
+                <div class="col">
+                    <input type="number" class="form-control" placeholder="Services Per Period" required>
+                </div>
+                ` : ''}
+                <div class="col-auto">
+                    <button type="button" class="btn btn-danger remove-service">Remove</button>
+                </div>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', serviceHtml);
+}
+
+function addCategory(type) {
+    const container = document.getElementById(type);
+    const categoryHtml = `
+        <div class="option-category mb-3">
+            <div class="row mb-2">
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Category Name" required>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-danger remove-category">Remove Category</button>
+                </div>
+            </div>
+            <div class="options-list"></div>
+            <button type="button" class="btn btn-secondary add-option">Add Option</button>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', categoryHtml);
+}
+
+function addOption(optionsList) {
+    const optionHtml = `
+        <div class="option-item row mb-2">
+            <div class="col">
+                <input type="text" class="form-control" placeholder="Option Name" required>
+            </div>
+            <div class="col">
+                <input type="number" class="form-control" placeholder="Additional Cost" required>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-option">Remove Option</button>
+            </div>
+        </div>
+    `;
+    optionsList.insertAdjacentHTML('beforeend', optionHtml);
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-service')) {
+        e.target.closest('.service-item').remove();
+    }
+    if (e.target.classList.contains('remove-category')) {
+        e.target.closest('.option-category').remove();
+    }
+    if (e.target.classList.contains('remove-option')) {
+        e.target.closest('.option-item').remove();
+    }
+    if (e.target.classList.contains('add-option')) {
+        const optionsList = e.target.previousElementSibling;
+        addOption(optionsList);
+    }
+});
+
+document.getElementById('businessConfigForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const config = {
+        businessName: document.getElementById('businessName').value,
+        businessDescription: document.getElementById('businessDescription').value,
+        about: document.getElementById('about').value,
+        services: {
+            oneTime: [],
+            subscription: []
+        },
+        serviceOptions: {
+            oneTimeOptions: [],
+            subscriptionOptionsAtSignup: [],
+            subscriptionOptionsAtOrder: []
+        }
+    };
+
+    // Collect services
+    document.querySelectorAll('#oneTimeServices .service-item').forEach(item => {
+        const inputs = item.querySelectorAll('input');
+        config.services.oneTime.push({
+            name: inputs[0].value,
+            description: inputs[1].value,
+            price: parseFloat(inputs[2].value)
         });
     });
 
-    // Add new option
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('add-option')) {
-            const categoryItem = e.target.closest('.category-item');
-            const categoryIndex = Array.from(categoryItem.parentNode.children).indexOf(categoryItem);
-            const optionsList = categoryItem.querySelector('.options-list');
-            const newOptionIndex = optionsList.children.length;
+    document.querySelectorAll('#subscriptionServices .service-item').forEach(item => {
+        const inputs = item.querySelectorAll('input');
+        config.services.subscription.push({
+            name: inputs[0].value,
+            description: inputs[1].value,
+            price: parseFloat(inputs[2].value),
+            servicesPerPeriod: parseInt(inputs[3].value),
+            billingFrequency: 'monthly'
+        });
+    });
+
+    // Collect service options
+    ['oneTimeOptions', 'subscriptionOptionsAtSignup', 'subscriptionOptionsAtOrder'].forEach(optionType => {
+        document.querySelectorAll(`#${optionType} .option-category`).forEach(category => {
+            const categoryName = category.querySelector('input').value;
+            const options = [];
             
-            const optionHTML = `
-                <div class="option-item mb-2">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <input type="text" class="form-control" 
-                                   name="serviceOptions[${categoryIndex}][options][${newOptionIndex}][name]" 
-                                   value="">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="number" class="form-control" step="0.01"
-                                   name="serviceOptions[${categoryIndex}][options][${newOptionIndex}][additionalCost]" 
-                                   value="0">
-                        </div>
-                        <div class="col-md-1">
-                            <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            optionsList.insertAdjacentHTML('beforeend', optionHTML);
-        }
+            category.querySelectorAll('.option-item').forEach(item => {
+                const inputs = item.querySelectorAll('input');
+                options.push({
+                    name: inputs[0].value,
+                    additionalCost: parseFloat(inputs[1].value)
+                });
+            });
+
+            config.serviceOptions[optionType].push({
+                categoryName: categoryName,
+                options: options
+            });
+        });
     });
 
-    // Remove option
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-option')) {
-            if (confirm('Are you sure you want to remove this option?')) {
-                e.target.closest('.option-item').remove();
-            }
+    // Send to server
+    fetch('/api/update-business-config', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Configuration saved successfully!');
+        } else {
+            alert('Error saving configuration: ' + data.message);
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving configuration');
     });
-
-    // Remove category
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-category')) {
-            if (confirm('Are you sure you want to remove this category and all its options?')) {
-                e.target.closest('.category-item').remove();
-            }
-        }
-    });
+});
 </script>
 {% endblock %}

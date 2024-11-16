@@ -476,13 +476,39 @@ def update_business_config():
             return jsonify({'success': False, 'message': 'No data provided'}), 400
 
         # Validate required fields
-        required_fields = ['businessName', 'businessDescription', 'about', 'services']
-        missing_fields = [field for field in required_fields if not new_config.get(field)]
+        required_fields = ['businessName', 'businessDescription', 'about', 'services', 'serviceOptions']
+        missing_fields = [field for field in required_fields if field not in new_config]
         if missing_fields:
             return jsonify({
                 'success': False, 
                 'message': f'Missing required fields: {", ".join(missing_fields)}'
             }), 400
+
+        # Validate service options structure
+        service_options = new_config.get('serviceOptions', {})
+        required_option_categories = ['oneTimeOptions', 'subscriptionOptionsAtSignup', 'subscriptionOptionsAtOrder']
+        for category in required_option_categories:
+            if category not in service_options:
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing service options category: {category}'
+                }), 400
+            
+            # Validate each category's structure
+            for option_group in service_options[category]:
+                if not isinstance(option_group, dict) or 'categoryName' not in option_group or 'options' not in option_group:
+                    return jsonify({
+                        'success': False,
+                        'message': f'Invalid structure in {category}'
+                    }), 400
+                
+                # Validate options array
+                for option in option_group['options']:
+                    if not isinstance(option, dict) or 'name' not in option or 'additionalCost' not in option:
+                        return jsonify({
+                            'success': False,
+                            'message': f'Invalid option structure in {category}'
+                        }), 400
 
         # Helper function to generate ID from name
         def generate_id(name):
@@ -506,7 +532,7 @@ def update_business_config():
                 if service_type == 'subscription':
                     required_service_fields.extend(['billingFrequency', 'servicesPerPeriod'])
 
-                missing_service_fields = [field for field in required_service_fields if not service.get(field)]
+                missing_service_fields = [field for field in required_service_fields if field not in service]
                 if missing_service_fields:
                     return jsonify({
                         'success': False,
