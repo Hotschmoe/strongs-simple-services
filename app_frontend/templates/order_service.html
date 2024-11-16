@@ -18,8 +18,34 @@
                     <p>Services remaining this period: {{ subscription.remaining_services }}</p>
                     <p>Subscription ends: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
                     {% if subscription.remaining_services > 0 %}
-                    <form action="{{ url_for('request_subscription_service') }}" method="POST">
+                    <form action="{{ url_for('request_subscription_service') }}" method="POST" class="mb-3">
                         <input type="hidden" name="subscription_id" value="{{ subscription.id }}">
+                        
+                        <!-- Add subscription order options here -->
+                        {% for category in business_config['serviceOptions']['subscriptionOptionsAtOrder'] %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ category['categoryName'] }}</label>
+                            <select class="form-control subscription-order-option" 
+                                    name="option_{{ category['categoryName'] }}" 
+                                    data-category="{{ category['categoryName'] }}">
+                                {% for option in category['options'] %}
+                                <option value="{{ option['name'] }}" 
+                                        data-cost="{{ option['additionalCost'] }}">
+                                    {{ option['name'] }}
+                                    {% if option['additionalCost'] > 0 %}
+                                        (+${{ "%.2f"|format(option['additionalCost']) }})
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Special Requests/Comments</label>
+                            <textarea class="form-control" name="subscription_comments" rows="2"></textarea>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">Request Service</button>
                     </form>
                     {% endif %}
@@ -140,31 +166,6 @@
                             {% endfor %}
                         </div>
 
-                        <!-- Subscription Options at Order -->
-                        {% if g.user.has_active_subscription() %}
-                        <div id="subscriptionOptionsAtOrder" style="display: none;">
-                            {% for category in business_config['serviceOptions']['subscriptionOptionsAtOrder'] %}
-                            <div class="mb-3">
-                                <label class="form-label">{{ category['categoryName'] }}</label>
-                                <select class="form-control service-option" 
-                                        name="option_{{ category['categoryName'] }}" 
-                                        data-category="{{ category['categoryName'] }}"
-                                        data-option-type="subscriptionOrder">
-                                    {% for option in category['options'] %}
-                                    <option value="{{ option['name'] }}" 
-                                            data-cost="{{ option['additionalCost'] }}">
-                                        {{ option['name'] }}
-                                        {% if option['additionalCost'] > 0 %}
-                                            (+${{ "%.2f"|format(option['additionalCost']) }})
-                                        {% endif %}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
                         <div class="mb-3">
                             <label class="form-label">Special Requests/Comments</label>
                             <textarea class="form-control" name="requestsComments" rows="3"></textarea>
@@ -266,6 +267,11 @@
     const serviceOptions = document.querySelectorAll('.service-option');
     let basePrice = 0;
 
+    // Add event listeners to all service options
+    serviceOptions.forEach(select => {
+        select.addEventListener('change', updateTotalPrice);
+    });
+
     document.querySelectorAll('.service-card').forEach(card => {
         card.addEventListener('click', function() {
             document.querySelectorAll('.service-card').forEach(c => {
@@ -278,7 +284,7 @@
             document.querySelector('.payment-section').style.display = 'block';
 
             // Hide all option sections first
-            document.querySelectorAll('#oneTimeOptions, #subscriptionOptionsAtSignup, #subscriptionOptionsAtOrder')
+            document.querySelectorAll('#oneTimeOptions, #subscriptionOptionsAtSignup')
                 .forEach(section => section.style.display = 'none');
 
             // Show relevant options based on service type
@@ -287,14 +293,6 @@
                 document.getElementById('oneTimeOptions').style.display = 'block';
             } else if (serviceType === 'subscription') {
                 document.getElementById('subscriptionOptionsAtSignup').style.display = 'block';
-            }
-
-            // Show subscription order options if user has active subscription
-            if (document.getElementById('subscriptionOptionsAtOrder')) {
-                const hasActiveSubscription = {{ 'true' if g.user.has_active_subscription() else 'false' }};
-                if (hasActiveSubscription) {
-                    document.getElementById('subscriptionOptionsAtOrder').style.display = 'block';
-                }
             }
 
             basePrice = parseFloat(this.dataset.price);
@@ -307,7 +305,8 @@
         
         // Only count visible options
         document.querySelectorAll('.service-option').forEach(select => {
-            if (select.closest('div[id]').style.display !== 'none') {
+            const parentDiv = select.closest('div[id]');
+            if (parentDiv && parentDiv.style.display !== 'none') {
                 const selectedOption = select.options[select.selectedIndex];
                 const additionalCost = parseFloat(selectedOption.dataset.cost) || 0;
                 total += additionalCost;
