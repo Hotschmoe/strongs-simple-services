@@ -302,6 +302,7 @@ document.getElementById('businessConfigForm').addEventListener('submit', functio
         businessName: document.getElementById('businessName').value,
         businessDescription: document.getElementById('businessDescription').value,
         about: document.getElementById('about').value,
+        paymentSettings: {{ business_config.paymentSettings|tojson|safe }},
         services: {
             oneTime: [],
             subscription: []
@@ -309,7 +310,8 @@ document.getElementById('businessConfigForm').addEventListener('submit', functio
         serviceOptions: {
             oneTimeOptions: [],
             subscriptionOptionsAtSignup: [],
-            subscriptionOptionsAtOrder: []
+            subscriptionOptionsAtOrder: [],
+            requestsComments: "{{ business_config.serviceOptions.get('requestsComments', '') }}"
         }
     };
 

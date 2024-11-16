@@ -476,12 +476,22 @@ def update_business_config():
             return jsonify({'success': False, 'message': 'No data provided'}), 400
 
         # Validate required fields
-        required_fields = ['businessName', 'businessDescription', 'about', 'services', 'serviceOptions']
+        required_fields = ['businessName', 'businessDescription', 'about', 'services', 'serviceOptions', 'paymentSettings']
         missing_fields = [field for field in required_fields if field not in new_config]
         if missing_fields:
             return jsonify({
                 'success': False, 
                 'message': f'Missing required fields: {", ".join(missing_fields)}'
+            }), 400
+
+        # Validate payment settings
+        payment_settings = new_config.get('paymentSettings', {})
+        required_payment_fields = ['acceptCash', 'acceptCard', 'stripeEnabled', 'currency']
+        missing_payment_fields = [field for field in required_payment_fields if field not in payment_settings]
+        if missing_payment_fields:
+            return jsonify({
+                'success': False,
+                'message': f'Missing payment settings: {", ".join(missing_payment_fields)}'
             }), 400
 
         # Validate service options structure
