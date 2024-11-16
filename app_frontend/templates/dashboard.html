@@ -71,6 +71,8 @@
                             <th>Payment Method</th>
                             <th>Created At</th>
                             <th>Updated At</th>
+                            <th>Options</th>
+                            <th>Comments</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -87,6 +89,20 @@
                             <td>{{ order.payment_method }}</td>
                             <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if order.service_options %}
+                                    {% set options = order.service_options|from_json %}
+                                    {% for category, option in options.items() %}
+                                        <div class="mb-1">
+                                            <small class="text-muted">{{ category }}:</small> 
+                                            <span>{{ option }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <small class="text-muted">No options selected</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.requests_comments or '' }}</td>
                             <td>
                                 {% if order.payment_status != 'paid' %}
                                 <button class="btn btn-sm btn-success mark-paid action-button" data-order-id="{{ order.id }}">Mark as Paid</button>
@@ -120,6 +136,8 @@
                             <th>Payment Method</th>
                             <th>Created At</th>
                             <th>Updated At</th>
+                            <th>Options</th>
+                            <th>Comments</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -136,6 +154,20 @@
                             <td>{{ order.payment_method }}</td>
                             <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if order.service_options %}
+                                    {% set options = order.service_options|from_json %}
+                                    {% for category, option in options.items() %}
+                                        <div class="mb-1">
+                                            <small class="text-muted">{{ category }}:</small> 
+                                            <span>{{ option }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <small class="text-muted">No options selected</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.requests_comments or '' }}</td>
                             <td>
                                 <a href="#" class="btn btn-sm btn-primary edit-order action-button" data-order-id="{{ order.id }}">Edit</a>
                                 <button class="btn btn-sm btn-outline-secondary print-receipt action-button" data-order-id="{{ order.id }}">Print Receipt</button>

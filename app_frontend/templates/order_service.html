@@ -11,21 +11,49 @@
                 <p class="lead">{{ business_config['businessDescription'] }}</p>
             </div>
 
-            {% if g.user.has_active_subscription() %}
-                {% for subscription in g.user.get_active_subscriptions() %}
-                <div class="alert alert-info">
-                    <h4>Active Subscription: {{ subscription.id|replace('-', ' ')|title }}</h4>
-                    <p>Services remaining this period: {{ subscription.remaining_services }}</p>
-                    <p>Subscription ends: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
-                    {% if subscription.remaining_services > 0 %}
-                    <form action="{{ url_for('request_subscription_service') }}" method="POST">
-                        <input type="hidden" name="subscription_id" value="{{ subscription.id }}">
-                        <button type="submit" class="btn btn-primary">Request Service</button>
-                    </form>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% endif %}
+            <div id="activeSubscriptionSection">
+                {% if g.user.has_active_subscription() %}
+                    {% for subscription in g.user.get_active_subscriptions() %}
+                    <div class="alert alert-info">
+                        <h4>Active Subscription: {{ subscription.id|replace('-', ' ')|title }}</h4>
+                        <p>Services remaining this period: {{ subscription.remaining_services }}</p>
+                        <p>Subscription ends: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
+                        {% if subscription.remaining_services > 0 %}
+                        <form action="{{ url_for('request_subscription_service') }}" method="POST" class="mb-3">
+                            <input type="hidden" name="subscription_id" value="{{ subscription.id }}">
+                            
+                            <!-- Add subscription order options here -->
+                            {% for category in business_config['serviceOptions']['subscriptionOptionsAtOrder'] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ category['categoryName'] }}</label>
+                                <select class="form-control subscription-order-option" 
+                                        name="option_{{ category['categoryName'] }}" 
+                                        data-category="{{ category['categoryName'] }}">
+                                    {% for option in category['options'] %}
+                                    <option value="{{ option['name'] }}" 
+                                            data-cost="{{ option['additionalCost'] }}">
+                                        {{ option['name'] }}
+                                        {% if option['additionalCost'] > 0 %}
+                                            (+${{ "%.2f"|format(option['additionalCost']) }})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
+
+                            <div class="mb-3">
+                                <label class="form-label">Special Requests/Comments</label>
+                                <textarea class="form-control" name="subscription_comments" rows="2"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Request Service</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
 
             <form id="orderForm">
                 <div class="row mb-5">
@@ -91,25 +119,91 @@
                     </div>
                 </div>
 
+                <div id="serviceOptionsSection" class="mt-4" style="display: none;">
+                    <h4>Service Options</h4>
+                    <div class="card p-4">
+                        <!-- One-Time Options -->
+                        <div id="oneTimeOptions" style="display: none;">
+                            {% for category in business_config['serviceOptions']['oneTimeOptions'] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ category['categoryName'] }}</label>
+                                <select class="form-control service-option" 
+                                        name="option_{{ category['categoryName'] }}" 
+                                        data-category="{{ category['categoryName'] }}"
+                                        data-option-type="oneTime">
+                                    {% for option in category['options'] %}
+                                    <option value="{{ option['name'] }}" 
+                                            data-cost="{{ option['additionalCost'] }}">
+                                        {{ option['name'] }}
+                                        {% if option['additionalCost'] > 0 %}
+                                            (+${{ "%.2f"|format(option['additionalCost']) }})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Subscription Options at Signup -->
+                        <div id="subscriptionOptionsAtSignup" style="display: none;">
+                            {% for category in business_config['serviceOptions']['subscriptionOptionsAtSignup'] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ category['categoryName'] }}</label>
+                                <select class="form-control service-option" 
+                                        name="option_{{ category['categoryName'] }}" 
+                                        data-category="{{ category['categoryName'] }}"
+                                        data-option-type="subscriptionSignup">
+                                    {% for option in category['options'] %}
+                                    <option value="{{ option['name'] }}" 
+                                            data-cost="{{ option['additionalCost'] }}">
+                                        {{ option['name'] }}
+                                        {% if option['additionalCost'] > 0 %}
+                                            (+${{ "%.2f"|format(option['additionalCost']) }})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Special Requests/Comments</label>
+                            <textarea class="form-control" name="requestsComments" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Total Price</label>
+                            <div class="h4">$<span id="totalPrice">0.00</span></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="payment-section mt-4" style="display: none;">
                     <h3>Payment Method</h3>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="cash">
-                        <label class="form-check-label" for="cashPayment">
-                            Pay with Cash (at pickup)
-                        </label>
+                    <div class="payment-method-container">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="cash">
+                            <label class="form-check-label" for="cashPayment">
+                                Pay with Cash (at pickup)
+                            </label>
+                        </div>
+                        {% if business_config['paymentSettings']['acceptCard'] and business_config['paymentSettings']['stripeEnabled'] %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="cardPayment" value="card">
+                            <label class="form-check-label" for="cardPayment">
+                                Pay with Card
+                            </label>
+                        </div>
+                        <div id="card-element-container" style="display: none;">
+                            <div id="card-element">
+                                <!-- Stripe Elements will be inserted here -->
+                            </div>
+                            <div id="card-errors" class="text-danger" role="alert"></div>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% if business_config['paymentSettings']['acceptCard'] and business_config['paymentSettings']['stripeEnabled'] %}
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="cardPayment" value="card">
-                        <label class="form-check-label" for="cardPayment">
-                            Pay with Card
-                        </label>
-                    </div>
-                    <div id="card-element" class="mb-3" style="display: none;">
-                        <!-- Stripe Elements will be inserted here -->
-                    </div>
-                    {% endif %}
                 </div>
 
                 <button type="submit" class="btn btn-primary">Place Order</button>
@@ -118,6 +212,14 @@
             <div id="orderConfirmation" class="text-center mt-4" style="display: none;">
                 <h2>Order Confirmation</h2>
                 <p>Your order has been placed successfully. Order ID: <span id="orderId"></span></p>
+                
+                <div id="subscriptionConfirmation" style="display: none;">
+                    <div class="alert alert-info mt-3">
+                        <h4>Subscription Details</h4>
+                        <p>Your subscription has been activated. You can now use your subscription services from the Order Service page.</p>
+                    </div>
+                </div>
+
                 <p><strong id="paymentStatus"></strong></p>
                 <button id="printReceipt" class="btn btn-secondary">Print Receipt</button>
             </div>
@@ -139,11 +241,91 @@
 <script>
     const stripe = Stripe('{{ stripe_public_key }}');
     const elements = stripe.elements();
-    const card = elements.create('card');
+    const card = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#32325d',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontSmoothing: 'antialiased',
+                '::placeholder': {
+                    color: '#aab7c4'
+                },
+                padding: '10px 12px',
+            },
+            invalid: {
+                color: '#dc3545',
+                iconColor: '#dc3545'
+            }
+        }
+    });
     card.mount('#card-element');
+
+    // Add real-time validation
+    card.addEventListener('change', function(event) {
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+            displayError.textContent = event.error.message;
+        } else {
+            displayError.textContent = '';
+        }
+    });
 </script>
 {% endif %}
 <script>
+    const serviceOptionsSection = document.getElementById('serviceOptionsSection');
+    const serviceOptions = document.querySelectorAll('.service-option');
+    let basePrice = 0;
+
+    // Add event listeners to all service options
+    serviceOptions.forEach(select => {
+        select.addEventListener('change', updateTotalPrice);
+    });
+
+    document.querySelectorAll('.service-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.service-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            this.classList.add('selected');
+            
+            serviceOptionsSection.style.display = 'block';
+            document.querySelector('.payment-section').style.display = 'block';
+
+            // Hide all option sections first
+            document.querySelectorAll('#oneTimeOptions, #subscriptionOptionsAtSignup')
+                .forEach(section => section.style.display = 'none');
+
+            // Show relevant options based on service type
+            const serviceType = this.dataset.type;
+            if (serviceType === 'oneTime') {
+                document.getElementById('oneTimeOptions').style.display = 'block';
+            } else if (serviceType === 'subscription') {
+                document.getElementById('subscriptionOptionsAtSignup').style.display = 'block';
+            }
+
+            basePrice = parseFloat(this.dataset.price);
+            updateTotalPrice();
+        });
+    });
+
+    function updateTotalPrice() {
+        let total = basePrice;
+        
+        // Only count visible options
+        document.querySelectorAll('.service-option').forEach(select => {
+            const parentDiv = select.closest('div[id]');
+            if (parentDiv && parentDiv.style.display !== 'none') {
+                const selectedOption = select.options[select.selectedIndex];
+                const additionalCost = parseFloat(selectedOption.dataset.cost) || 0;
+                total += additionalCost;
+            }
+        });
+        
+        document.getElementById('totalPrice').textContent = total.toFixed(2);
+    }
+
     document.getElementById('orderForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const selectedService = document.querySelector('.service-card.selected');
@@ -154,28 +336,33 @@
             return;
         }
 
-        // Show the loading spinner
-        document.getElementById('loadingSpinner').style.display = 'block';
+        const selectedOptions = {};
+        document.querySelectorAll('.service-option').forEach(select => {
+            // Only include options from visible sections
+            if (select.closest('div[id]').style.display !== 'none') {
+                selectedOptions[select.dataset.category] = select.value;
+            }
+        });
 
-        const serviceType = selectedService.dataset.type;
-        const serviceId = selectedService.dataset.service;
-        const price = selectedService.dataset.price;
+        const orderData = {
+            serviceType: selectedService.dataset.type,
+            serviceId: selectedService.dataset.service,
+            paymentMethod: paymentMethod.value,
+            price: document.getElementById('totalPrice').textContent,
+            serviceOptions: selectedOptions,
+            requestsComments: document.querySelector('[name="requestsComments"]').value
+        };
+
+        document.getElementById('loadingSpinner').style.display = 'block';
 
         try {
             let orderId;
 
             if (paymentMethod.value === 'card') {
-                // For card payments, create payment intent first (which creates the order)
                 const response = await fetch('/create-payment-intent', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        serviceType,
-                        serviceId,
-                        price
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
                 });
 
                 if (!response.ok) {
@@ -195,18 +382,10 @@
                     throw new Error(error.message);
                 }
             } else {
-                // For cash payments, create order directly
                 const orderResponse = await fetch('/submit-order', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        serviceType,
-                        serviceId,
-                        paymentMethod: paymentMethod.value,
-                        price
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
                 });
 
                 if (!orderResponse.ok) {
@@ -217,54 +396,35 @@
                 orderId = response.orderId;
             }
 
-            // Hide the loading spinner
             document.getElementById('loadingSpinner').style.display = 'none';
 
-            // Display confirmation
             document.getElementById('orderId').textContent = orderId;
             document.getElementById('paymentStatus').textContent = 
                 paymentMethod.value === 'card' 
                     ? 'Payment Successful' 
                     : 'Payment: In-person at pickup';
-            document.getElementById('orderConfirmation').style.display = 'block';
+
+            const subscriptionConfirmation = document.getElementById('subscriptionConfirmation');
+            const activeSubscriptionSection = document.getElementById('activeSubscriptionSection');
+            
+            if (selectedService.dataset.type === 'subscription') {
+                subscriptionConfirmation.style.display = 'block';
+            } else {
+                subscriptionConfirmation.style.display = 'none';
+            }
+
+            if (activeSubscriptionSection) {
+                activeSubscriptionSection.style.display = 'none';
+            }
             document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('orderConfirmation').style.display = 'block';
 
         } catch (error) {
-            // Hide the loading spinner in case of error
             document.getElementById('loadingSpinner').style.display = 'none';
             alert(error.message || 'Failed to process order');
         }
     });
 
-    // Add click handler for service cards
-    document.querySelectorAll('.service-card').forEach(card => {
-        card.addEventListener('click', function() {
-            // Remove selected class from all cards
-            document.querySelectorAll('.service-card').forEach(c => {
-                c.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked card
-            this.classList.add('selected');
-            
-            // Show payment section when a service is selected
-            document.querySelector('.payment-section').style.display = 'block';
-        });
-    });
-
-    // Handle card payment element visibility
-    document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
-        input.addEventListener('change', function() {
-            const cardElement = document.getElementById('card-element');
-            if (this.value === 'card') {
-                cardElement.style.display = 'block';
-            } else {
-                cardElement.style.display = 'none';
-            }
-        });
-    });
-
-    // Add this new event listener for the print receipt button
     document.getElementById('printReceipt').addEventListener('click', async () => {
         const orderId = document.getElementById('orderId').textContent;
         try {
@@ -274,7 +434,6 @@
             }
             const receiptData = await response.json();
             
-            // Create a new window with styled receipt content
             const receiptWindow = window.open('', '_blank');
             if (!receiptWindow) {
                 alert('Please allow pop-ups to print receipts');
@@ -317,6 +476,16 @@
                                 display: none;
                             }
                         }
+                        .receipt-section {
+                            margin: 15px 0;
+                            padding: 10px 0;
+                            border-top: 1px solid #eee;
+                        }
+                        .receipt-section h4 {
+                            margin-bottom: 10px;
+                            color: #666;
+                            font-size: 14px;
+                        }
                     </style>
                 </head>
                 <body>
@@ -350,6 +519,15 @@
                         <span>${receiptData.date}</span>
                     </div>
                     
+                    ${receiptData.service_options}
+                    
+                    <div class="receipt-section">
+                        <h4>Special Requests:</h4>
+                        <div class="receipt-item">
+                            <p>${receiptData.requests_comments || ''}</p>
+                        </div>
+                    </div>
+                    
                     <div class="no-print" style="text-align: center; margin-top: 30px;">
                         <button onclick="window.print()">Print Receipt</button>
                     </div>
@@ -361,6 +539,17 @@
             console.error('Error:', error);
             alert('Failed to generate receipt: ' + error.message);
         }
+    });
+
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const cardElementContainer = document.getElementById('card-element-container');
+            if (this.value === 'card') {
+                cardElementContainer.style.display = 'block';
+            } else {
+                cardElementContainer.style.display = 'none';
+            }
+        });
     });
 </script>
 {% endblock %}
@@ -407,6 +596,48 @@
         .service-card-wrapper {
             flex-basis: 100%;
         }
+    }
+
+    /* Add these new styles for the card element */
+    #card-element {
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease;
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
+    #card-element:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    #card-element.StripeElement--focus {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        border-color: #0066cc;
+    }
+
+    #card-element.StripeElement--invalid {
+        border-color: #dc3545;
+    }
+
+    /* Card payment section styling */
+    .payment-method-container {
+        padding: 20px;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+        margin-bottom: 30px;
+    }
+
+    body.dark-mode #card-element {
+        background-color: #2c3e50;
+        border-color: #4a4a4a;
+    }
+
+    body.dark-mode .payment-method-container {
+        background-color: #1a2634;
     }
 </style>
 {% endblock %}

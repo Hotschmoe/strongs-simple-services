@@ -247,9 +247,17 @@ def get_receipt(order_id):
     
     order = Order.query.get_or_404(order_id)
     
-    # Allow access if user is admin or if the order belongs to the user
     if not g.user.is_admin and order.user_id != g.user.id:
         return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Parse service options if they exist
+    service_options_html = ""
+    if order.service_options:
+        options = json.loads(order.service_options)
+        service_options_html = "<div class='receipt-section'><h4>Selected Options:</h4>"
+        for category, option in options.items():
+            service_options_html += f"<div class='receipt-item'><span>{category}:</span><span>{option}</span></div>"
+        service_options_html += "</div>"
     
     receipt_data = {
         'order_id': order.id,
@@ -258,7 +266,9 @@ def get_receipt(order_id):
         'quantity': order.quantity,
         'total': order.total,
         'date': order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-        'business_name': business_config['businessName']
+        'business_name': business_config['businessName'],
+        'service_options': service_options_html,
+        'requests_comments': order.requests_comments if order.requests_comments else ''
     }
     
     return jsonify(receipt_data)
@@ -301,6 +311,7 @@ def manage_order(order_id):
     order = Order.query.get_or_404(order_id)
     
     if request.method == 'GET':
+        service_options = json.loads(order.service_options) if order.service_options else {}
         return jsonify({
             'id': order.id,
             'service_type': order.service_type,
@@ -310,7 +321,9 @@ def manage_order(order_id):
             'payment_status': order.payment_status,
             'payment_method': order.payment_method,
             'stripe_payment_intent_id': order.stripe_payment_intent_id,
-            'is_subscription_order': order.is_subscription_order
+            'is_subscription_order': order.is_subscription_order,
+            'service_options': service_options,
+            'requests_comments': order.requests_comments
         })
     
     elif request.method == 'PUT':
@@ -320,7 +333,12 @@ def manage_order(order_id):
         order.total = data.get('total', order.total)
         order.status = data.get('status', order.status)
         order.payment_status = data.get('payment_status', order.payment_status)
-        order.payment_method = data.get('payment_type', order.payment_method)
+        order.payment_method = data.get('payment_method', order.payment_method)
+        
+        if 'service_options' in data:
+            order.service_options = json.dumps(data['service_options'])
+        if 'requests_comments' in data:
+            order.requests_comments = data['requests_comments']
         
         db.session.commit()
         return jsonify({'success': True})
@@ -458,13 +476,49 @@ def update_business_config():
             return jsonify({'success': False, 'message': 'No data provided'}), 400
 
         # Validate required fields
-        required_fields = ['businessName', 'businessDescription', 'about', 'services']
-        missing_fields = [field for field in required_fields if not new_config.get(field)]
+        required_fields = ['businessName', 'businessDescription', 'about', 'services', 'serviceOptions', 'paymentSettings']
+        missing_fields = [field for field in required_fields if field not in new_config]
         if missing_fields:
             return jsonify({
                 'success': False, 
                 'message': f'Missing required fields: {", ".join(missing_fields)}'
             }), 400
+
+        # Validate payment settings
+        payment_settings = new_config.get('paymentSettings', {})
+        required_payment_fields = ['acceptCash', 'acceptCard', 'stripeEnabled', 'currency']
+        missing_payment_fields = [field for field in required_payment_fields if field not in payment_settings]
+        if missing_payment_fields:
+            return jsonify({
+                'success': False,
+                'message': f'Missing payment settings: {", ".join(missing_payment_fields)}'
+            }), 400
+
+        # Validate service options structure
+        service_options = new_config.get('serviceOptions', {})
+        required_option_categories = ['oneTimeOptions', 'subscriptionOptionsAtSignup', 'subscriptionOptionsAtOrder']
+        for category in required_option_categories:
+            if category not in service_options:
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing service options category: {category}'
+                }), 400
+            
+            # Validate each category's structure
+            for option_group in service_options[category]:
+                if not isinstance(option_group, dict) or 'categoryName' not in option_group or 'options' not in option_group:
+                    return jsonify({
+                        'success': False,
+                        'message': f'Invalid structure in {category}'
+                    }), 400
+                
+                # Validate options array
+                for option in option_group['options']:
+                    if not isinstance(option, dict) or 'name' not in option or 'additionalCost' not in option:
+                        return jsonify({
+                            'success': False,
+                            'message': f'Invalid option structure in {category}'
+                        }), 400
 
         # Helper function to generate ID from name
         def generate_id(name):
@@ -488,7 +542,7 @@ def update_business_config():
                 if service_type == 'subscription':
                     required_service_fields.extend(['billingFrequency', 'servicesPerPeriod'])
 
-                missing_service_fields = [field for field in required_service_fields if not service.get(field)]
+                missing_service_fields = [field for field in required_service_fields if field not in service]
                 if missing_service_fields:
                     return jsonify({
                         'success': False,
@@ -541,8 +595,6 @@ def create_payment_intent():
         return jsonify({'error': 'User not authenticated'}), 401
 
     stripe_key = os.environ.get('STRIPE_SECRET_KEY')
-    app.logger.info(f"Using Stripe Key: {'exists' if stripe_key else 'missing'}")
-    
     if not stripe_key:
         app.logger.error("Stripe API key not found in environment variables")
         return jsonify({'error': 'Payment service configuration error'}), 500
@@ -554,11 +606,10 @@ def create_payment_intent():
         service_type = data.get('serviceType')
         service_id = data.get('serviceId')
         price = data.get('price')
+        service_options = data.get('serviceOptions', {})
+        requests_comments = data.get('requestsComments', '')
 
-        if not all([service_type, service_id, price]):
-            return jsonify({'error': 'Missing required payment information'}), 400
-
-        # Create order first
+        # Create order with service options
         order_id = str(uuid.uuid4())
         order = Order(
             id=order_id,
@@ -568,11 +619,13 @@ def create_payment_intent():
             total=float(price),
             payment_method='card',
             payment_status='pending',
-            is_subscription_order=(service_type == 'subscription')
+            is_subscription_order=(service_type == 'subscription'),
+            service_options=json.dumps(service_options),
+            requests_comments=requests_comments
         )
         db.session.add(order)
 
-        # If it's a subscription order, prepare the subscription
+        # Handle subscription creation
         if service_type == 'subscription':
             subscription_config = next(
                 (s for s in business_config['services']['subscription'] 
@@ -583,21 +636,21 @@ def create_payment_intent():
             if not subscription_config:
                 raise ValueError('Invalid subscription service')
 
-            # Create subscription record (will be activated after payment)
             new_subscription = Subscription(
                 user_id=g.user.id,
                 subscription_id=service_id,
-                status='pending',  # Will be activated after payment
+                status='pending',
                 start_date=datetime.utcnow(),
                 end_date=datetime.utcnow() + timedelta(days=30),
                 services_allowed=subscription_config['servicesPerPeriod'],
-                services_used=0
+                services_used=0,
+                service_options=json.dumps(service_options)
             )
             db.session.add(new_subscription)
 
         db.session.commit()
 
-        # Create payment intent
+        # Create Stripe payment intent
         intent = stripe.PaymentIntent.create(
             amount=int(float(price) * 100),
             currency=business_config.get('paymentSettings', {}).get('currency', 'usd'),
@@ -633,47 +686,26 @@ def submit_order():
         service_id = data.get('serviceId')
         payment_method = data.get('paymentMethod')
         price = data.get('price')
+        service_options = data.get('serviceOptions', {})
+        requests_comments = data.get('requestsComments', '')
 
-        app.logger.debug(f"Order submission - Service Type: {service_type}, Service ID: {service_id}")
-        app.logger.debug(f"Available subscription services: {business_config['services'].get('subscription', [])}")
-
-        if not all([service_type, service_id, payment_method, price]):
-            app.logger.error(f"Missing required fields: {{'serviceType': service_type, 'serviceId': service_id, 'paymentMethod': payment_method, 'price': price}}")
-            return jsonify({'error': 'Missing required order information'}), 400
-
-        # Handle subscription
-        if service_type == 'subscription':
-            # Find subscription details from business config
-            subscription_config = next(
-                (s for s in business_config['services']['subscription'] 
-                 if s.get('id') == service_id),  # Added .get() for safer access
-                None
-            )
-            
-            if not subscription_config:
-                app.logger.error(f"Invalid subscription service ID: {service_id}")
-                app.logger.error(f"Available subscription IDs: {[s.get('id') for s in business_config['services'].get('subscription', [])]}")
-                raise ValueError(f'Invalid subscription service: {service_id}')
-
-            app.logger.debug(f"Found subscription config: {subscription_config}")
-
-        # Create order with correct payment status
-        order_id = str(uuid.uuid4())
+        # Create order with service options
         order = Order(
-            id=order_id,
+            id=str(uuid.uuid4()),
             user_id=g.user.id,
             service_type=service_id,
             quantity=1,
             total=float(price),
             payment_method=payment_method,
             payment_status='pending' if payment_method == 'card' else 'unpaid',
-            is_subscription_order=(service_type == 'subscription')
+            is_subscription_order=(service_type == 'subscription'),
+            service_options=json.dumps(service_options),
+            requests_comments=requests_comments
         )
         db.session.add(order)
-
+        
         # Handle subscription
         if service_type == 'subscription':
-            # Find subscription details from business config
             subscription_config = next(
                 (s for s in business_config['services']['subscription'] 
                  if s['id'] == service_id),
@@ -683,15 +715,16 @@ def submit_order():
             if not subscription_config:
                 raise ValueError('Invalid subscription service')
 
-            # Create new subscription
+            # Create new subscription with signup options
             new_subscription = Subscription(
                 user_id=g.user.id,
                 subscription_id=service_id,
                 status='active',
                 start_date=datetime.utcnow(),
-                end_date=datetime.utcnow() + timedelta(days=30),  # Adjust based on billing frequency
+                end_date=datetime.utcnow() + timedelta(days=30),
                 services_allowed=subscription_config['servicesPerPeriod'],
-                services_used=0
+                services_used=0,
+                service_options=json.dumps(service_options)  # Save signup options with subscription
             )
             db.session.add(new_subscription)
 
@@ -864,6 +897,17 @@ def request_subscription_service():
         return redirect(url_for('order_service'))
 
     try:
+        # Collect service options
+        service_options = {}
+        for category in business_config['serviceOptions']['subscriptionOptionsAtOrder']:
+            category_name = category['categoryName']
+            option_value = request.form.get(f'option_{category_name}')
+            if option_value:
+                service_options[category_name] = option_value
+
+        # Get comments
+        comments = request.form.get('subscription_comments', '')
+
         # Create a new order for the service
         order = Order(
             id=str(uuid.uuid4()),
@@ -874,7 +918,9 @@ def request_subscription_service():
             status='Pending',
             payment_status='paid',  # Already paid through subscription
             payment_method='subscription',
-            is_subscription_order=True
+            is_subscription_order=True,
+            service_options=json.dumps(service_options),
+            requests_comments=comments
         )
         
         # Increment the services used count
@@ -891,6 +937,12 @@ def request_subscription_service():
         app.logger.error(f"Failed to create subscription service order: {str(e)}")
         flash('Failed to request service. Please try again.', 'error')
         return redirect(url_for('order_service'))
+
+@app.template_filter('from_json')
+def from_json(value):
+    if not value:
+        return {}
+    return json.loads(value)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

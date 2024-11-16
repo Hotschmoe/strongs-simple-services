@@ -3,10 +3,10 @@
     "businessDescription": "Professional laundry and wash services",
     "about": "Fresh & Clean Laundry provides convenient and reliable laundry services. We handle your clothes with care and ensure they come back clean, fresh, and neatly folded.",
     "paymentSettings": {
-        "acceptCash": true,
         "acceptCard": true,
-        "stripeEnabled": true,
-        "currency": "usd"
+        "acceptCash": true,
+        "currency": "usd",
+        "stripeEnabled": true
     },
     "services": {
         "oneTime": [
@@ -28,18 +28,102 @@
                 "name": "Standard Wash Plan",
                 "description": "4 washes per month",
                 "price": 80,
-                "billingFrequency": "monthly",
                 "servicesPerPeriod": 4,
+                "billingFrequency": "monthly",
                 "id": "standard-wash-plan"
             },
             {
                 "name": "Large Wash Plan",
                 "description": "6 washes per month",
                 "price": 90,
-                "billingFrequency": "monthly",
                 "servicesPerPeriod": 6,
+                "billingFrequency": "monthly",
                 "id": "large-wash-plan"
             }
         ]
+    },
+    "serviceOptions": {
+        "oneTimeOptions": [
+            {
+                "categoryName": "Detergents",
+                "options": [
+                    {
+                        "name": "EOS Hypoallergenic Liquid Laundry Detergent + Enzymes - Lavender Scent",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Persil OXI + Odor Power Liquid Laundry Detergent",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Member\u2019S Mark Liquid Laundry Detergent - Fresh Scent",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Tide Liquid Laundry Detergent - Original Scent",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Molly Suds Laundry Powder - Unscented",
+                        "additionalCost": 1
+                    },
+                    {
+                        "name": "Molly Suds Laundry Powder - Peppermint",
+                        "additionalCost": 1
+                    }
+                ]
+            }
+        ],
+        "subscriptionOptionsAtSignup": [
+            {
+                "categoryName": "Stain Removers",
+                "options": [
+                    {
+                        "name": "None",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Oxy Clean",
+                        "additionalCost": 1
+                    },
+                    {
+                        "name": "Shout",
+                        "additionalCost": 1
+                    },
+                    {
+                        "name": "Clorox 2 - Colors",
+                        "additionalCost": 1
+                    }
+                ]
+            }
+        ],
+        "subscriptionOptionsAtOrder": [
+            {
+                "categoryName": "Scent Boosters",
+                "options": [
+                    {
+                        "name": "None",
+                        "additionalCost": 0
+                    },
+                    {
+                        "name": "Ocean mist",
+                        "additionalCost": 1
+                    },
+                    {
+                        "name": "Whimsical wonder",
+                        "additionalCost": 1
+                    },
+                    {
+                        "name": "Fresh frais",
+                        "additionalCost": 1
+                    },
+                    {
+                        "name": "asd",
+                        "additionalCost": 1
+                    }
+                ]
+            }
+        ],
+        "requestsComments": ""
     }
 }

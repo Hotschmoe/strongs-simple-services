@@ -1,6 +1,7 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import json
 
 class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -13,6 +14,20 @@ class Subscription(db.Model):
     services_used = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    service_options = db.Column(db.Text, nullable=True)
+
+    def get_service_options(self):
+        """Returns the service options as a dictionary"""
+        if not self.service_options:
+            return {}
+        return json.loads(self.service_options)
+
+    def set_service_options(self, options):
+        """Sets the service options from a dictionary"""
+        if options is None:
+            self.service_options = None
+        else:
+            self.service_options = json.dumps(options)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -127,3 +142,34 @@ class Order(db.Model):
     is_subscription_order = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    service_options = db.Column(db.Text, nullable=True)  # JSON string of selected options
+    requests_comments = db.Column(db.Text, nullable=True)
+
+    def get_service_options(self):
+        """Returns the service options as a dictionary"""
+        if not self.service_options:
+            return {}
+        return json.loads(self.service_options)
+
+    def set_service_options(self, options):
+        """Sets the service options from a dictionary"""
+        if options is None:
+            self.service_options = None
+        else:
+            self.service_options = json.dumps(options)
+
+    def to_dict(self):
+        """Convert order to dictionary format"""
+        return {
+            'id': self.id,
+            'service_type': self.service_type,
+            'quantity': self.quantity,
+            'total': self.total,
+            'status': self.status,
+            'payment_status': self.payment_status,
+            'payment_method': self.payment_method,
+            'service_options': self.get_service_options(),
+            'requests_comments': self.requests_comments,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
