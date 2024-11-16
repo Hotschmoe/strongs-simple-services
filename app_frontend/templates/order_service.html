@@ -11,47 +11,49 @@
                 <p class="lead">{{ business_config['businessDescription'] }}</p>
             </div>
 
-            {% if g.user.has_active_subscription() %}
-                {% for subscription in g.user.get_active_subscriptions() %}
-                <div class="alert alert-info">
-                    <h4>Active Subscription: {{ subscription.id|replace('-', ' ')|title }}</h4>
-                    <p>Services remaining this period: {{ subscription.remaining_services }}</p>
-                    <p>Subscription ends: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
-                    {% if subscription.remaining_services > 0 %}
-                    <form action="{{ url_for('request_subscription_service') }}" method="POST" class="mb-3">
-                        <input type="hidden" name="subscription_id" value="{{ subscription.id }}">
-                        
-                        <!-- Add subscription order options here -->
-                        {% for category in business_config['serviceOptions']['subscriptionOptionsAtOrder'] %}
-                        <div class="mb-3">
-                            <label class="form-label">{{ category['categoryName'] }}</label>
-                            <select class="form-control subscription-order-option" 
-                                    name="option_{{ category['categoryName'] }}" 
-                                    data-category="{{ category['categoryName'] }}">
-                                {% for option in category['options'] %}
-                                <option value="{{ option['name'] }}" 
-                                        data-cost="{{ option['additionalCost'] }}">
-                                    {{ option['name'] }}
-                                    {% if option['additionalCost'] > 0 %}
-                                        (+${{ "%.2f"|format(option['additionalCost']) }})
-                                    {% endif %}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        {% endfor %}
+            <div id="activeSubscriptionSection">
+                {% if g.user.has_active_subscription() %}
+                    {% for subscription in g.user.get_active_subscriptions() %}
+                    <div class="alert alert-info">
+                        <h4>Active Subscription: {{ subscription.id|replace('-', ' ')|title }}</h4>
+                        <p>Services remaining this period: {{ subscription.remaining_services }}</p>
+                        <p>Subscription ends: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
+                        {% if subscription.remaining_services > 0 %}
+                        <form action="{{ url_for('request_subscription_service') }}" method="POST" class="mb-3">
+                            <input type="hidden" name="subscription_id" value="{{ subscription.id }}">
+                            
+                            <!-- Add subscription order options here -->
+                            {% for category in business_config['serviceOptions']['subscriptionOptionsAtOrder'] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ category['categoryName'] }}</label>
+                                <select class="form-control subscription-order-option" 
+                                        name="option_{{ category['categoryName'] }}" 
+                                        data-category="{{ category['categoryName'] }}">
+                                    {% for option in category['options'] %}
+                                    <option value="{{ option['name'] }}" 
+                                            data-cost="{{ option['additionalCost'] }}">
+                                        {{ option['name'] }}
+                                        {% if option['additionalCost'] > 0 %}
+                                            (+${{ "%.2f"|format(option['additionalCost']) }})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
 
-                        <div class="mb-3">
-                            <label class="form-label">Special Requests/Comments</label>
-                            <textarea class="form-control" name="subscription_comments" rows="2"></textarea>
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">Special Requests/Comments</label>
+                                <textarea class="form-control" name="subscription_comments" rows="2"></textarea>
+                            </div>
 
-                        <button type="submit" class="btn btn-primary">Request Service</button>
-                    </form>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% endif %}
+                            <button type="submit" class="btn btn-primary">Request Service</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
 
             <form id="orderForm">
                 <div class="row mb-5">
@@ -210,6 +212,14 @@
             <div id="orderConfirmation" class="text-center mt-4" style="display: none;">
                 <h2>Order Confirmation</h2>
                 <p>Your order has been placed successfully. Order ID: <span id="orderId"></span></p>
+                
+                <div id="subscriptionConfirmation" style="display: none;">
+                    <div class="alert alert-info mt-3">
+                        <h4>Subscription Details</h4>
+                        <p>Your subscription has been activated. You can now use your subscription services from the Order Service page.</p>
+                    </div>
+                </div>
+
                 <p><strong id="paymentStatus"></strong></p>
                 <button id="printReceipt" class="btn btn-secondary">Print Receipt</button>
             </div>
@@ -393,8 +403,21 @@
                 paymentMethod.value === 'card' 
                     ? 'Payment Successful' 
                     : 'Payment: In-person at pickup';
-            document.getElementById('orderConfirmation').style.display = 'block';
+
+            const subscriptionConfirmation = document.getElementById('subscriptionConfirmation');
+            const activeSubscriptionSection = document.getElementById('activeSubscriptionSection');
+            
+            if (selectedService.dataset.type === 'subscription') {
+                subscriptionConfirmation.style.display = 'block';
+            } else {
+                subscriptionConfirmation.style.display = 'none';
+            }
+
+            if (activeSubscriptionSection) {
+                activeSubscriptionSection.style.display = 'none';
+            }
             document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('orderConfirmation').style.display = 'block';
 
         } catch (error) {
             document.getElementById('loadingSpinner').style.display = 'none';
