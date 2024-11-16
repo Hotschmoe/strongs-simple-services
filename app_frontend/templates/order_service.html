@@ -94,24 +94,76 @@
                 <div id="serviceOptionsSection" class="mt-4" style="display: none;">
                     <h4>Service Options</h4>
                     <div class="card p-4">
-                        {% for category in business_config['serviceOptions']['categories'] %}
-                        <div class="mb-3">
-                            <label class="form-label">{{ category['categoryName'] }}</label>
-                            <select class="form-control service-option" 
-                                    name="option_{{ category['categoryName'] }}" 
-                                    data-category="{{ category['categoryName'] }}">
-                                {% for option in category['options'] %}
-                                <option value="{{ option['name'] }}" 
-                                        data-cost="{{ option['additionalCost'] }}">
-                                    {{ option['name'] }}
-                                    {% if option['additionalCost'] > 0 %}
-                                        (+${{ "%.2f"|format(option['additionalCost']) }})
-                                    {% endif %}
-                                </option>
-                                {% endfor %}
-                            </select>
+                        <!-- One-Time Options -->
+                        <div id="oneTimeOptions" style="display: none;">
+                            {% for category in business_config['serviceOptions']['oneTimeOptions'] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ category['categoryName'] }}</label>
+                                <select class="form-control service-option" 
+                                        name="option_{{ category['categoryName'] }}" 
+                                        data-category="{{ category['categoryName'] }}"
+                                        data-option-type="oneTime">
+                                    {% for option in category['options'] %}
+                                    <option value="{{ option['name'] }}" 
+                                            data-cost="{{ option['additionalCost'] }}">
+                                        {{ option['name'] }}
+                                        {% if option['additionalCost'] > 0 %}
+                                            (+${{ "%.2f"|format(option['additionalCost']) }})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
+
+                        <!-- Subscription Options at Signup -->
+                        <div id="subscriptionOptionsAtSignup" style="display: none;">
+                            {% for category in business_config['serviceOptions']['subscriptionOptionsAtSignup'] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ category['categoryName'] }}</label>
+                                <select class="form-control service-option" 
+                                        name="option_{{ category['categoryName'] }}" 
+                                        data-category="{{ category['categoryName'] }}"
+                                        data-option-type="subscriptionSignup">
+                                    {% for option in category['options'] %}
+                                    <option value="{{ option['name'] }}" 
+                                            data-cost="{{ option['additionalCost'] }}">
+                                        {{ option['name'] }}
+                                        {% if option['additionalCost'] > 0 %}
+                                            (+${{ "%.2f"|format(option['additionalCost']) }})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Subscription Options at Order -->
+                        {% if g.user.has_active_subscription() %}
+                        <div id="subscriptionOptionsAtOrder" style="display: none;">
+                            {% for category in business_config['serviceOptions']['subscriptionOptionsAtOrder'] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ category['categoryName'] }}</label>
+                                <select class="form-control service-option" 
+                                        name="option_{{ category['categoryName'] }}" 
+                                        data-category="{{ category['categoryName'] }}"
+                                        data-option-type="subscriptionOrder">
+                                    {% for option in category['options'] %}
+                                    <option value="{{ option['name'] }}" 
+                                            data-cost="{{ option['additionalCost'] }}">
+                                        {{ option['name'] }}
+                                        {% if option['additionalCost'] > 0 %}
+                                            (+${{ "%.2f"|format(option['additionalCost']) }})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
 
                         <div class="mb-3">
                             <label class="form-label">Special Requests/Comments</label>
@@ -225,6 +277,26 @@
             serviceOptionsSection.style.display = 'block';
             document.querySelector('.payment-section').style.display = 'block';
 
+            // Hide all option sections first
+            document.querySelectorAll('#oneTimeOptions, #subscriptionOptionsAtSignup, #subscriptionOptionsAtOrder')
+                .forEach(section => section.style.display = 'none');
+
+            // Show relevant options based on service type
+            const serviceType = this.dataset.type;
+            if (serviceType === 'oneTime') {
+                document.getElementById('oneTimeOptions').style.display = 'block';
+            } else if (serviceType === 'subscription') {
+                document.getElementById('subscriptionOptionsAtSignup').style.display = 'block';
+            }
+
+            // Show subscription order options if user has active subscription
+            if (document.getElementById('subscriptionOptionsAtOrder')) {
+                const hasActiveSubscription = {{ 'true' if g.user.has_active_subscription() else 'false' }};
+                if (hasActiveSubscription) {
+                    document.getElementById('subscriptionOptionsAtOrder').style.display = 'block';
+                }
+            }
+
             basePrice = parseFloat(this.dataset.price);
             updateTotalPrice();
         });
@@ -233,18 +305,17 @@
     function updateTotalPrice() {
         let total = basePrice;
         
-        serviceOptions.forEach(select => {
-            const selectedOption = select.options[select.selectedIndex];
-            const additionalCost = parseFloat(selectedOption.dataset.cost) || 0;
-            total += additionalCost;
+        // Only count visible options
+        document.querySelectorAll('.service-option').forEach(select => {
+            if (select.closest('div[id]').style.display !== 'none') {
+                const selectedOption = select.options[select.selectedIndex];
+                const additionalCost = parseFloat(selectedOption.dataset.cost) || 0;
+                total += additionalCost;
+            }
         });
         
         document.getElementById('totalPrice').textContent = total.toFixed(2);
     }
-
-    serviceOptions.forEach(select => {
-        select.addEventListener('change', updateTotalPrice);
-    });
 
     document.getElementById('orderForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -257,8 +328,11 @@
         }
 
         const selectedOptions = {};
-        serviceOptions.forEach(select => {
-            selectedOptions[select.dataset.category] = select.value;
+        document.querySelectorAll('.service-option').forEach(select => {
+            // Only include options from visible sections
+            if (select.closest('div[id]').style.display !== 'none') {
+                selectedOptions[select.dataset.category] = select.value;
+            }
         });
 
         const orderData = {
