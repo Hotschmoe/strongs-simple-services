@@ -41,6 +41,14 @@ This web application helps service-based businesses manage orders and subscripti
   - [x] Database backup and restore
   - [ ] Analytics dashboard
   - [ ] Bulk operations (orders/users)
+  - [ ] Email notifications
+  - [ ] SMS notifications
+  - [ ] Calendar integration
+  - [ ] Proxy-ordering (admin can order for users)
+  - [ ] Handle payment failures
+  - [ ] Handle subscription turnover (cancel/renew/consumed)
+  - [ ] Handle Consent Forms and Agreement Signatures (save to database)
+  - [ ] Migration and database on updates
 - [x] Payment processing
   - [x] Stripe integration for card payments
   - [x] Cash payment tracking
